@@ -31,6 +31,8 @@ irm https://luyifei2011.github.io/scratchblocks-to-scratch/patch-desktop.ps1 | i
 
 > [!NOTE]
 > 如果您在运行脚本时遇到权限问题，请以管理员身份重新运行 PowerShell。
+>
+> 如果出现乱码，请使用 PowerShell 7 或更高版本。
 
 ### ScratchAddons
 

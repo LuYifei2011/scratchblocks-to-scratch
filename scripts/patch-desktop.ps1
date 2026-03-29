@@ -267,7 +267,7 @@ window.GM_addStyle = function (style) {
         exit 1
     }
     
-    SkipHtmlUpdate:
+    :SkipHtmlUpdate
 
     # ===== 打包 asar =====
     Write-Output ""
