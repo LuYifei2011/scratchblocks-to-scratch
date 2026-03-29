@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         将 scratchblocks 转换为 Scratch 积木块
 // @namespace    https://luyifei2011.github.io/
-// @version      0.0.1-alpha
+// @version      0.0.2-alpha
 // @author       Lu Yifei
 // @description  将 scratchblocks 代码转换为 Scratch 积木块
 // @copyright    2025-2026, Lu Yifei (https://github.com/LuYifei2011), licensed under GPL-3.0
@@ -385,7 +385,7 @@ gui_tabs: "gandi_editor-wrapper_tabList",
     const tab = {
       scratchClass,
       Blockly: api.Blockly,
-      scratchMessage: (m) => m
+      scratchMessage: (m) => api.Blockly?.ScratchMsgs?.locales?.[api.Blockly?.ScratchMsgs?.currentLocale_]?.[m] || api.reduxState?.locales?.messages?.[m] || m
     };
     function prompt$1(title, message, defaultValue, opts) {
       return prompt(tab, title, message, defaultValue, opts);
@@ -6558,7 +6558,7 @@ a:hover {
     variable: "变量",
     list: "列表"
   };
-  setTimeout(async () => {
+  async function main() {
     const api = window.api = await getAddonApi();
     console.log("[text2blocks] API", api);
     text2Blocks({
@@ -6567,8 +6567,24 @@ a:hover {
         log: (...args) => console.log("[text2blocks]", ...args),
         error: (...args) => console.error("[text2blocks]", ...args)
       },
-      msg: (t) => zhCN[t] || t
+      msg: (t, vars) => {
+        let str = zhCN[t] || t;
+        if (vars) {
+          for (const [key, val] of Object.entries(vars)) {
+            str = str.replaceAll(`{${key}}`, val);
+          }
+        }
+        return str;
+      }
     });
-  }, 2e3);
+  }
+  function waitForLoaded() {
+    if (document.querySelector(".blocklyWorkspace")) {
+      main();
+    } else {
+      setTimeout(waitForLoaded, 100);
+    }
+  }
+  waitForLoaded();
 
 })();
