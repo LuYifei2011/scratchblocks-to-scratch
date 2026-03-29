@@ -188,7 +188,9 @@ if ($action -eq "1") {
     # 在脚本头部添加 GM_addStyle 函数
     $gmAddStyle = @"
 window.GM_addStyle = function (style) {
-	console.log('gm_addstyle')
+    const styleElement = document.createElement('style');
+    styleElement.textContent = style;
+    document.head.appendChild(styleElement);
 };
 "@
     
