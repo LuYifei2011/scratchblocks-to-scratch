@@ -203,7 +203,10 @@ export async function getAddonApi() {
   const tab = {
     scratchClass,
     Blockly: api.Blockly,
-    scratchMessage: (m) => m,
+    scratchMessage: (m) =>
+      api.Blockly?.ScratchMsgs?.locales?.[api.Blockly?.ScratchMsgs?.currentLocale_]?.[m] ||
+      api.reduxState?.locales?.messages?.[m] ||
+      m,
   };
 
   function prompt(title, message, defaultValue, opts) {

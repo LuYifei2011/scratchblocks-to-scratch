@@ -4,7 +4,7 @@ import "./style.js";
 
 import zhCN from "./i18n/zh-cn.js";
 
-setTimeout(async () => {
+async function main() {
   const api = (window.api = await getAddonApi());
   console.log("[text2blocks] API", api);
   text2Blocks({
@@ -13,6 +13,24 @@ setTimeout(async () => {
       log: (...args) => console.log("[text2blocks]", ...args),
       error: (...args) => console.error("[text2blocks]", ...args),
     },
-    msg: (t) => zhCN[t] || t,
+    msg: (t, vars) => {
+      let str = zhCN[t] || t;
+      if (vars) {
+        for (const [key, val] of Object.entries(vars)) {
+          str = str.replaceAll(`{${key}}`, val);
+        }
+      }
+      return str;
+    },
   });
-}, 2000);
+}
+
+function waitForLoaded() {
+  if (document.querySelector(".blocklyWorkspace")) {
+    main();
+  } else {
+    setTimeout(waitForLoaded, 100);
+  }
+}
+
+waitForLoaded();
