@@ -25,17 +25,14 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Prepare release files
+      - name: Prepare pages files
         run: |
-          mkdir -p release
-          cp -r dist/* release/
-          cp -r scripts/* release/
+          mkdir -p pages
+          cp -r dist/* pages/
+          cp -r scripts/* pages/
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          files: release/**
-          draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./pages
