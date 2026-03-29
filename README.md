@@ -26,7 +26,7 @@
 使用 PowerShell 运行:
 
 ```powershell
-irm https://luyifei2011.github.io/scratchblocks-to-scratch/patch.ps1 | iex
+irm https://luyifei2011.github.io/scratchblocks-to-scratch/patch-desktop.ps1 | iex
 ```
 
 > [!NOTE]
