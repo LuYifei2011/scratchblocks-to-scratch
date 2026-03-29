@@ -246,30 +246,32 @@ window.GM_addStyle = function (style) {
         if ($htmlContent -match [regex]::Escape($scriptTag)) {
             Write-Output "  [提示] 脚本已被添加，跳过重复添加"
         } else {
+            $doWrite = $true
             # 检查是否已经包含脚本标签（无论路径是否相同）
             if ($htmlContent -match "<script\s+src=[`"'].*$scriptName[`"']></script>\s*</body>") {
                 Write-Host "  [提示] 是否覆盖/更新已有的脚本标签？(Y/N): " -NoNewline
                 $overwrite = Read-Host
                 if ($overwrite -ne "Y") {
                     Write-Output "  [已跳过]"
-                    goto SkipHtmlUpdate
+                    $doWrite = $false
+                } else {
+                    # 替换已有的脚本标签
+                    $htmlContent = $htmlContent -replace "<script\s+src=[`"'].*$scriptName[`"']></script>\s*</body>", $scriptTag
                 }
-                # 替换已有的脚本标签
-                $htmlContent = $htmlContent -replace "<script\s+src=[`"'].*$scriptName[`"']></script>\s*</body>", $scriptTag
             } else {
                 # 直接替换 </body>
                 $htmlContent = $htmlContent -replace "</body>", $scriptTag
             }
-            
-            Set-Content -Path $htmlFile -Value $htmlContent -Encoding UTF8 -ErrorAction Stop
-            Write-Output "  [成功]"
+
+            if ($doWrite) {
+                Set-Content -Path $htmlFile -Value $htmlContent -Encoding UTF8 -ErrorAction Stop
+                Write-Output "  [成功]"
+            }
         }
     } else {
         Write-Error "HTML 文件中未找到 </body>"
         exit 1
     }
-    
-    :SkipHtmlUpdate
 
     # ===== 打包 asar =====
     Write-Output ""
