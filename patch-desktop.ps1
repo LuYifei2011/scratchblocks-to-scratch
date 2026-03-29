@@ -1,4 +1,3 @@
-chcp.com 65001 > $null
 Write-Output "将 scratchblocks 代码转换为 Scratch 积木块 - 桌面版安装脚本"
 
 # -----------------------------------------------------------------------
@@ -189,7 +188,9 @@ if ($action -eq "1") {
     # 在脚本头部添加 GM_addStyle 函数
     $gmAddStyle = @"
 window.GM_addStyle = function (style) {
-	console.log('gm_addstyle')
+    const styleElement = document.createElement('style');
+    styleElement.textContent = style;
+    document.head.appendChild(styleElement);
 };
 "@
     
@@ -268,7 +269,7 @@ window.GM_addStyle = function (style) {
         exit 1
     }
     
-    SkipHtmlUpdate:
+    :SkipHtmlUpdate
 
     # ===== 打包 asar =====
     Write-Output ""
