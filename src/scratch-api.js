@@ -29,7 +29,7 @@ function getReduxState() {
 async function getBlockly() {
   // ---- 依赖：获取 React 内部 Fiber key ----
   function getInternalKey(elem) {
-    const REACT_INTERNAL_PREFIXES = ["__reactFiber$"];
+    const REACT_INTERNAL_PREFIXES = ["__reactFiber$", "__reactInternalInstance$"];
     return Object.keys(elem).find((key) => REACT_INTERNAL_PREFIXES.some((prefix) => key.startsWith(prefix)));
   }
 
@@ -71,7 +71,6 @@ async function getBlockly() {
   const childable = getBlocksComponent(elem);
   const Blockly = childable.stateNode.ScratchBlocks;
 
-  console.log("Blockly instance:", Blockly);
   return Blockly;
 }
 
