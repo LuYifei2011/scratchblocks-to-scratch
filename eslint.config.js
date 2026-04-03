@@ -17,15 +17,8 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
-      'indent': ['error', 2],
-      'linebreak-style': ['error', 'unix'],
-      'quotes': ['error', 'single', { avoidEscape: true }],
-      'semi': ['error', 'always'],
-      'no-console': 'warn',
-      'no-unused-vars': ['error', { args: 'none' }],
-      'no-trailing-spaces': 'error',
-      'eqeqeq': ['error', 'always'],
-      'curly': ['error', 'all']
+      'no-unused-vars': ['warn', { args: 'none' }],
+      'no-empty': 'warn',
     }
   }
 ];

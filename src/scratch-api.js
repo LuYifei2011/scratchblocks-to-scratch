@@ -1,5 +1,7 @@
 import * as modal from "./modal.js";
 
+const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi/project/");
+
 function getReduxState() {
   // 找到任意 React 挂载的节点
   const root =
@@ -96,10 +98,13 @@ function convertScratchToGandiClassName(className) {
     // 对话框
     "modal_modal-overlay": "gandi_modal_modal-overlay",
   };
-  if (window.location.href.startsWith("https://www.ccw.site/gandi/project/")) {
-    return GANDI_CLASS_NAME_MAP[className] || "gandi_" + className;
+  if (isGandi) {
+    return (
+      GANDI_CLASS_NAME_MAP[className] ||
+      console.warn(`[text2blocks] No class name mapping for "${className}" in this environment`) ||
+      "gandi_" + className
+    );
   }
-  console.warn(`[text2blocks] No class name mapping for "${className}" in this environment`);
   return className;
 }
 
@@ -136,7 +141,7 @@ function loadScratchClassNames() {
         .map((e) => e.replace(/\\\+/g, "+"))
     ),
   ];
-  if (window.location.href.startsWith("https://www.ccw.site/gandi/project/")) {
+  if (isGandi) {
     return arr.reverse(); // 反转数组，使得后面定义的类名优先匹配
   } else {
     return arr; // 不反转，保持原有顺序
@@ -192,7 +197,7 @@ export async function getAddonApi() {
     vm = reduxState?.scratchGui?.vm;
     workspace = window.Blockly.getMainWorkspace();
     api = { reduxState, vm, workspace };
-    if (window.location.href.startsWith("https://www.ccw.site/gandi/project/")) {
+    if (isGandi) {
       api.Blockly = workspace.getScratchBlocks();
     } else {
       api.Blockly = await getBlockly();
