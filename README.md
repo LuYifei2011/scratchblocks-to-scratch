@@ -32,7 +32,19 @@ irm https://luyifei2011.github.io/scratchblocks-to-scratch/patch-desktop.ps1 | i
 > [!NOTE]
 > 如果您在运行脚本时遇到权限问题，请以管理员身份重新运行 PowerShell。
 >
-> 如果出现乱码，请使用 PowerShell 7 或更高版本。
+> 如果出现乱码，请使用 PowerShell 7 或更高版本，
+> 
+> 或者使用以下代码:
+> ```powershell
+> & {$w=New-Object Net.WebClient;$w.Encoding=[Text.Encoding]::UTF8;iex $w.DownloadString('https://luyifei2011.github.io/scratchblocks-to-scratch/patch-desktop.ps1')}
+> ```
+
+> [!NOTE]
+> 您可以使用以下方法打开 PowerShell
+>
+> 1.右键 开始菜单 按钮 (Windows 徽标按钮)
+> 
+> 2.点击 终端(管理员)
 
 ### ScratchAddons
 
