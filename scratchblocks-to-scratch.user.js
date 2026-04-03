@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         将 scratchblocks 转换为 Scratch 积木块
 // @namespace    https://luyifei2011.github.io/
-// @version      0.0.2-alpha
+// @version      0.0.3-alpha
 // @author       Lu Yifei
 // @description  将 scratchblocks 代码转换为 Scratch 积木块
 // @copyright    2025-2026, Lu Yifei (https://github.com/LuYifei2011), licensed under GPL-3.0
@@ -254,7 +254,7 @@
   }
   async function getBlockly() {
     function getInternalKey(elem2) {
-      const REACT_INTERNAL_PREFIXES = ["__reactFiber$"];
+      const REACT_INTERNAL_PREFIXES = ["__reactFiber$", "__reactInternalInstance$"];
       return Object.keys(elem2).find((key) => REACT_INTERNAL_PREFIXES.some((prefix) => key.startsWith(prefix)));
     }
     function getBlocksComponent(wrapper) {
@@ -289,7 +289,6 @@
     }
     const childable = getBlocksComponent(elem);
     const Blockly = childable.stateNode.ScratchBlocks;
-    console.log("Blockly instance:", Blockly);
     return Blockly;
   }
   function convertScratchToGandiClassName(className) {
