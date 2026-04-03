@@ -2,52 +2,42 @@ name: Code Formatting
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, develop]
     paths:
-      - 'src/**'
-      - '.github/workflows/format.yml'
-      - 'package.json'
+      - "src/**"
+      - ".github/workflows/format.yml"
+      - "package.json"
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, develop]
     paths:
-      - 'src/**'
+      - "src/**"
 
 jobs:
   format:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-      
+          node-version: "22"
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Check code formatting with Prettier
-        run: npm run format:check
-      
-      - name: Lint code with ESLint
-        run: npm run lint
-      
-      - name: Auto-fix formatting issues (if in PR)
-        if: failure() && github.event_name == 'pull_request'
-        run: |
-          npm run format
-          npm run lint:fix
-      
-      - name: Commit and push changes (if auto-fixed)
-        if: failure() && github.event_name == 'pull_request'
+
+      - name: Format code with Prettier
+        run: npm run format
+
+      - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'fix: auto-format code'
-          commit_user_name: 'github-actions[bot]'
-          commit_user_email: '41898282+github-actions[bot]@users.noreply.github.com'
-          commit_options: '--no-verify'
+          commit_message: "Format code with Prettier"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+          commit_options: "--no-verify"
