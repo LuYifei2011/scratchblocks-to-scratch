@@ -48,7 +48,7 @@ irm https://luyifei2011.github.io/scratchblocks-to-scratch/patch-desktop.ps1 | i
 
 ### ScratchAddons
 
-我提了一个 [PR #8860](https://github.com/ScratchAddons/ScratchAddons/pull/8806)，目前还未合并。如果将来合并了，您也可以通过安装 ScratchAddons 来使用这个功能。
+我提了一个 [PR #8860](https://github.com/ScratchAddons/ScratchAddons/pull/8860)，目前还未合并。如果将来合并了，您也可以通过安装 ScratchAddons 来使用这个功能。
 
 ## 使用方法
 
