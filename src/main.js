@@ -27,7 +27,7 @@ async function main() {
 
 function waitForLoaded() {
   if (document.querySelector(".blocklyWorkspace")) {
-    main();
+    setTimeout(main, 1000);
   } else {
     setTimeout(waitForLoaded, 100);
   }

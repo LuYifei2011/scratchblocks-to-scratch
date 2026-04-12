@@ -5,7 +5,7 @@ const icons = {
     '<svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.657 6.112L6.343 17.426m0-11.314l11.314 11.314" stroke="#566276" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
 };
 
-const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi/project/");
+const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi");
 
 export const createEditorModal = (tab, title, { isOpen = false } = {}) => {
   const container = Object.assign(document.createElement("div"), {
