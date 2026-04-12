@@ -2,7 +2,7 @@ import { getAddonApi } from "./scratch-api.js";
 import text2Blocks from "./text2blocks/userscript.js";
 import "./style.js";
 
-import zhCN from "./i18n/zh-cn.js";
+import msgs from "./i18n/index.js";
 
 async function main() {
   const api = (window.api = await getAddonApi());
@@ -14,7 +14,7 @@ async function main() {
       error: (...args) => console.error("[text2blocks]", ...args),
     },
     msg: (t, vars) => {
-      let str = zhCN[t] || t;
+      let str = msgs[api?.tab?.redux?.state?.locales?.locale]?.[t] || msgs["en"]?.[t] || t;
       if (vars) {
         for (const [key, val] of Object.entries(vars)) {
           str = str.replaceAll(`{${key}}`, val);
