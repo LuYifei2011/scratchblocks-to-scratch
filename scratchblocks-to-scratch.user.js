@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         将 scratchblocks 转换为 Scratch 积木块
 // @namespace    https://luyifei2011.github.io/
-// @version      0.0.3-alpha
+// @version      0.0.4-alpha
 // @author       Lu Yifei
 // @description  将 scratchblocks 代码转换为 Scratch 积木块
 // @copyright    2025-2026, Lu Yifei (https://github.com/LuYifei2011), licensed under GPL-3.0
@@ -29,7 +29,7 @@
     "close-s3": "data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3LjQ4IDcuNDgiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDpub25lO3N0cm9rZTojZmZmO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2Utd2lkdGg6MnB4O308L3N0eWxlPjwvZGVmcz48dGl0bGU+aWNvbi0tYWRkPC90aXRsZT48bGluZSBjbGFzcz0iY2xzLTEiIHgxPSIzLjc0IiB5MT0iNi40OCIgeDI9IjMuNzQiIHkyPSIxIi8+PGxpbmUgY2xhc3M9ImNscy0xIiB4MT0iMSIgeTE9IjMuNzQiIHgyPSI2LjQ4IiB5Mj0iMy43NCIvPjwvc3ZnPg==",
     "close-gandi": '<svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.657 6.112L6.343 17.426m0-11.314l11.314 11.314" stroke="#566276" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
   };
-  const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi/project/");
+  const isGandi$2 = window.location.href.startsWith("https://www.ccw.site/gandi/project/");
   const createEditorModal = (tab, title, { isOpen = false } = {}) => {
     const container = Object.assign(document.createElement("div"), {
       className: tab.scratchClass("modal_modal-overlay"),
@@ -60,7 +60,7 @@
       className: tab.scratchClass("close-button_close-button", "close-button_large")
     });
     closeContainer.appendChild(closeButton);
-    if (isGandi) {
+    if (isGandi$2) {
       closeButton.innerHTML = icons["close-gandi"];
     } else {
       closeButton.appendChild(
@@ -234,7 +234,14 @@
       });
     });
   };
+  const isTurboWarp$1 = window.location.host === "turbowarp.org" || !!window.__SB2S_DESKTOP_TURBOWARP__;
+  const isCCW = window.location.href.startsWith("https://www.ccw.site");
+  const isGandi$1 = window.location.href.startsWith("https://www.ccw.site/gandi");
+  const DEFAULT_SETTINGS = {
+    autoPaste: true
+  };
   function getReduxState() {
+    if (isTurboWarp$1) return window.ReduxStore.getState();
     const root = document.querySelector('[class*="gui_"]') || document.querySelector("#app") || document.body.firstElementChild;
     const fiberKey = Object.keys(root).find(
       (k) => k.startsWith("__reactFiber$") || k.startsWith("__reactInternalInstance$")
@@ -252,7 +259,7 @@
     }
     return null;
   }
-  async function getBlockly() {
+  async function getBlocklyFromFiber() {
     function getInternalKey(elem2) {
       const REACT_INTERNAL_PREFIXES = ["__reactFiber$", "__reactInternalInstance$"];
       return Object.keys(elem2).find((key) => REACT_INTERNAL_PREFIXES.some((prefix) => key.startsWith(prefix)));
@@ -288,28 +295,25 @@
       elem = await waitForElement(BLOCKS_CLASS);
     }
     const childable = getBlocksComponent(elem);
-    const Blockly = childable.stateNode.ScratchBlocks;
-    return Blockly;
+    return childable.stateNode.ScratchBlocks;
   }
   function convertScratchToGandiClassName(className) {
     const GANDI_CLASS_NAME_MAP = {
-"menu-bar_menu-bar-item": "gandi_project-title-input_title-field",
-      "menu-bar_no-offset": "gandi_project-title-input_title-text",
-gui_tabs: "gandi_editor-wrapper_tabList",
+      gui_tabs: "gandi_editor-wrapper_tabList",
       "react-tabs_react-tabs__tab-list": "null",
-      "gui_tab-list": "null",
+      "gui_tab-list": "gandi_editor-wrapper_tabList",
       gui_tab: "null",
       "react-tabs_react-tabs__tab-panel": "null",
-      "gui_tab-panel": "null",
+      "gui_tab-panel": "gandi_editor-wrapper_tabPanel",
       "gui_is-selected": "null",
-      "react-tabs_react-tabs__tab": "react-tabs_react-gandi_editor-wrapper_tab",
+      "react-tabs_react-tabs__tab": "gandi_editor-wrapper_tab",
       "react-tabs_react-tabs__tab--selected": "gandi_editor-wrapper_selected",
-"modal_modal-overlay": "gandi_modal_modal-overlay"
+      "react-tabs_react-tabs__tab-panel--selected": "null",
+      "modal_modal-overlay": "gandi_modal_modal-overlay"
     };
-    if (window.location.href.startsWith("https://www.ccw.site/gandi/project/")) {
-      return GANDI_CLASS_NAME_MAP[className] || "gandi_" + className;
+    if (isGandi$1) {
+      return GANDI_CLASS_NAME_MAP[className] || console.warn(`[text2blocks] No class name mapping for "${className}" in this environment`) || "gandi_" + className;
     }
-    console.warn(`[text2blocks] No class name mapping for "${className}" in this environment`);
     return className;
   }
   function loadScratchClassNames() {
@@ -331,7 +335,7 @@ gui_tabs: "gandi_editor-wrapper_tabList",
         ).map((e) => getAllRules(e)).flat().map((e) => e.selectorText).filter((e) => e).map((e) => e.match(/(([\w-]+?)_([\w-]+)_(([\w\d-]|\\\+)+))/g)).filter((e) => e).flat().map((e) => e.replace(/\\\+/g, "+"))
       )
     ];
-    if (window.location.href.startsWith("https://www.ccw.site/gandi/project/")) {
+    if (isGandi$1) {
       return arr.reverse();
     } else {
       return arr;
@@ -346,7 +350,7 @@ gui_tabs: "gandi_editor-wrapper_tabList",
     let res = "";
     args.filter((arg) => typeof arg === "string").forEach((classNameToFind) => {
       classNameToFind = convertScratchToGandiClassName(classNameToFind);
-      if (classNameToFind === "null") return "null";
+      if (classNameToFind === "null") res += "null";
       res += classNamesArr.find(
         (className) => className.startsWith(classNameToFind + "_") && className.length === classNameToFind.length + 6
       ) || "";
@@ -361,45 +365,157 @@ gui_tabs: "gandi_editor-wrapper_tabList",
     res = res.replace(/"/g, "");
     return res;
   }
-  async function getAddonApi() {
-    let reduxState, vm, workspace, api;
-    if (window.location.host === "turbowarp.org" || window.__SB2S_DESKTOP_TURBOWARP__) {
-      api = {
-        Blockly: window.ScratchBlocks,
-        reduxState: window.ReduxStore.getState(),
-        vm: window.vm,
-        workspace: window.ScratchBlocks.getMainWorkspace()
+  const contextMenuCallbacks = [];
+  let createdAnyBlockContextMenus = false;
+  function setupBlockContextMenu(ScratchBlocks) {
+    if (ScratchBlocks.registry) {
+      const oldGenerateContextMenu = ScratchBlocks.BlockSvg.prototype.generateContextMenu;
+      ScratchBlocks.BlockSvg.prototype.generateContextMenu = function(...args) {
+        let items = oldGenerateContextMenu.call(this, ...args);
+        for (const { callback, blocks, flyout } of contextMenuCallbacks) {
+          const injectMenu = blocks && !this.isInFlyout || flyout && this.isInFlyout;
+          if (injectMenu) {
+            try {
+              items = callback(items, this);
+            } catch (e) {
+              console.error("Error while calling context menu callback: ", e);
+            }
+          }
+        }
+        return items;
       };
+      return;
+    }
+    const oldShow = ScratchBlocks.ContextMenu.show;
+    ScratchBlocks.ContextMenu.show = function(event, items, rtl) {
+      const gesture = ScratchBlocks.mainWorkspace.currentGesture_;
+      const block = gesture.targetBlock_;
+      for (const { callback, workspace, blocks, flyout, comments } of contextMenuCallbacks) {
+        const injectMenu = workspace && !block && !gesture.flyout_ && !gesture.startBubble_ || blocks && block && !gesture.flyout_ || flyout && gesture.flyout_ || comments && gesture.startBubble_;
+        if (injectMenu) {
+          try {
+            items = callback(items, block);
+          } catch (e) {
+            console.error("Error while calling context menu callback: ", e);
+          }
+        }
+      }
+      if (!isTurboWarp$1 && !isCCW) {
+        const expandedItems = [];
+        for (const item of items) {
+          if (item.separator && item.text) {
+            expandedItems.push({ separator: true, enabled: false, text: "" });
+            const { separator: _, ...rest } = item;
+            expandedItems.push(rest);
+          } else {
+            expandedItems.push(item);
+          }
+        }
+        items = expandedItems;
+        const oldCreateWidget = ScratchBlocks.ContextMenu.createWidget_;
+        ScratchBlocks.ContextMenu.createWidget_ = function(...args) {
+          oldCreateWidget.call(this, ...args);
+          const blocklyContextMenu = ScratchBlocks.WidgetDiv.DIV.firstChild;
+          items.forEach((item, i) => {
+            if (item.separator) {
+              const itemElt = blocklyContextMenu.children[i];
+              itemElt.setAttribute("role", "separator");
+              itemElt.style.padding = "0";
+              if (i !== 0) {
+                itemElt.style.borderTop = "1px solid hsla(0, 0%, 0%, 0.15)";
+              }
+            }
+          });
+        };
+        oldShow.call(this, event, items, rtl);
+        ScratchBlocks.ContextMenu.createWidget_ = oldCreateWidget;
+      } else {
+        oldShow.call(this, event, items, rtl);
+        const blocklyContextMenu = ScratchBlocks.WidgetDiv.DIV.firstChild;
+        items.forEach((item, i) => {
+          if (i !== 0 && item.separator) {
+            const itemElt = blocklyContextMenu.children[i];
+            itemElt.style.paddingTop = "2px";
+            itemElt.classList.add("sa-blockly-menu-item-border");
+            itemElt.style.borderTop = "1px solid var(--ui-black-transparent, hsla(0, 0%, 0%, 0.15))";
+          }
+        });
+      }
+    };
+  }
+  async function getAddonApi() {
+    let BlocklyInstance, reduxState, vm, workspace;
+    if (isTurboWarp$1) {
+      BlocklyInstance = window.ScratchBlocks;
+      reduxState = window.ReduxStore.getState();
+      vm = window.vm;
+      workspace = BlocklyInstance.getMainWorkspace();
     } else {
       reduxState = getReduxState();
       vm = reduxState?.scratchGui?.vm;
       workspace = window.Blockly.getMainWorkspace();
-      api = { reduxState, vm, workspace };
-      if (window.location.href.startsWith("https://www.ccw.site/gandi/project/")) {
-        api.Blockly = workspace.getScratchBlocks();
+      if (isGandi$1) {
+        BlocklyInstance = workspace.getScratchBlocks();
       } else {
-        api.Blockly = await getBlockly();
+        BlocklyInstance = await getBlocklyFromFiber();
       }
     }
-    const tab = {
-      scratchClass,
-      Blockly: api.Blockly,
-      scratchMessage: (m) => api.Blockly?.ScratchMsgs?.locales?.[api.Blockly?.ScratchMsgs?.currentLocale_]?.[m] || api.reduxState?.locales?.messages?.[m] || m
+    const traps = {
+      getBlockly: () => Promise.resolve(BlocklyInstance),
+      getWorkspace: () => workspace,
+      get vm() {
+        return vm;
+      }
     };
-    function prompt$1(title, message, defaultValue, opts) {
-      return prompt(tab, title, message, defaultValue, opts);
-    }
-    function confirm$1(title, message, opts) {
-      return confirm(tab, title, message, opts);
-    }
-    function createModal(title, { isOpen = false } = {}) {
-      return createEditorModal(tab, title, { isOpen });
-    }
-    tab.prompt = prompt$1;
-    tab.confirm = confirm$1;
-    tab.createModal = createModal;
-    api.tab = tab;
-    return api;
+    const redux = {
+      get state() {
+        if (isTurboWarp$1) return window.ReduxStore.getState();
+        return getReduxState();
+      }
+    };
+    const tab = {
+Blockly: BlocklyInstance,
+      editorMode: "editor",
+      clientVersion: "scratch-www",
+      get direction() {
+        const rtlLocales = ["ar", "ckb", "fa", "he"];
+        const locale = redux.state?.locales?.locale || "en";
+        const lang = locale.split("-")[0];
+        return rtlLocales.includes(lang) ? "rtl" : "ltr";
+      },
+traps,
+      redux,
+      scratchClass,
+      scratchMessage(m) {
+        return BlocklyInstance?.ScratchMsgs?.locales?.[BlocklyInstance?.ScratchMsgs?.currentLocale_]?.[m] || reduxState?.locales?.messages?.[m] || m;
+      },
+      createModal(title, { isOpen = false } = {}) {
+        return createEditorModal(tab, title, { isOpen });
+      },
+      prompt(title, message, defaultValue, opts) {
+        return prompt(tab, title, message, defaultValue, opts);
+      },
+      confirm(title, message, opts) {
+        return confirm(tab, title, message, opts);
+      },
+      createBlockContextMenu(callback, { workspace: workspace2 = false, blocks = false, flyout = false, comments = false } = {}) {
+        contextMenuCallbacks.push({ callback, workspace: workspace2, blocks, flyout, comments });
+        if (createdAnyBlockContextMenus) return;
+        createdAnyBlockContextMenus = true;
+        setupBlockContextMenu(BlocklyInstance);
+      }
+    };
+    return {
+      tab,
+      settings: {
+        get(key) {
+          return DEFAULT_SETTINGS[key];
+        }
+      },
+      self: {
+        disabled: false
+      }
+    };
   }
   const BOOLEAN = 0;
   const SCRIPT = 1;
@@ -734,6 +850,10 @@ gui_tabs: "gandi_editor-wrapper_tabList",
       category: "motion",
       params: [
         {
+          name: "SECS",
+          opcode: "math_positive_number"
+        },
+        {
           name: "TO",
           opcode: "motion_goto_menu",
           type: DROPDOWN,
@@ -742,10 +862,6 @@ gui_tabs: "gandi_editor-wrapper_tabList",
             MOTION_GLIDETO_RANDOM: "_random_"
           },
           dynamicOptions: "sprites"
-        },
-        {
-          name: "SECS",
-          opcode: "math_positive_number"
         }
       ]
     },
@@ -1054,10 +1170,24 @@ gui_tabs: "gandi_editor-wrapper_tabList",
         }
       ]
     },
-    sound_seteffecto: {
+    sound_seteffectto: {
+      id: "SOUND_SETEFFECTO",
       shape: "stack",
       category: "sound",
-      params: []
+      params: [
+        {
+          name: "EFFECT",
+          type: FIELD_DROPDOWN,
+          options: {
+            SOUND_EFFECTS_PITCH: "PITCH",
+            SOUND_EFFECTS_PAN: "PAN"
+          }
+        },
+        {
+          name: "VALUE",
+          opcode: "math_number"
+        }
+      ]
     },
     sound_cleareffects: {
       shape: "stack",
@@ -1084,7 +1214,12 @@ gui_tabs: "gandi_editor-wrapper_tabList",
     sound_changevolumeby: {
       shape: "stack",
       category: "sound",
-      params: []
+      params: [
+        {
+          name: "VOLUME",
+          opcode: "math_number"
+        }
+      ]
     },
     sound_setvolumeto: {
       shape: "stack",
@@ -1399,13 +1534,13 @@ gui_tabs: "gandi_editor-wrapper_tabList",
       category: "list",
       params: [
         {
+          name: "ITEM",
+          opcode: "text"
+        },
+        {
           name: "LIST",
           type: FIELD_DROPDOWN,
           dynamicOptions: "lists"
-        },
-        {
-          name: "ITEM",
-          opcode: "text"
         }
       ]
     },
@@ -1414,13 +1549,13 @@ gui_tabs: "gandi_editor-wrapper_tabList",
       category: "list",
       params: [
         {
+          name: "INDEX",
+          opcode: "math_integer"
+        },
+        {
           name: "LIST",
           type: FIELD_DROPDOWN,
           dynamicOptions: "lists"
-        },
-        {
-          name: "INDEX",
-          opcode: "math_integer"
         }
       ]
     },
@@ -1907,10 +2042,20 @@ gui_tabs: "gandi_editor-wrapper_tabList",
         }
       ]
     },
-    operator_letterof: {
+    operator_letter_of: {
+      id: "OPERATORS_LETTEROF",
       shape: "reporter",
       category: "operators",
-      params: []
+      params: [
+        {
+          name: "LETTER",
+          opcode: "math_number"
+        },
+        {
+          name: "STRING",
+          opcode: "text"
+        }
+      ]
     },
     operator_length: {
       shape: "reporter",
@@ -2977,10 +3122,11 @@ gui_tabs: "gandi_editor-wrapper_tabList",
   }
   const toOpcode = (str) => {
     if (!str) return "";
+    if (specialOpcodesMap[str]) {
+      return specialOpcodesMap[str];
+    }
     if (str.includes(".")) {
       return str.replace(".", "_");
-    } else if (specialOpcodesMap[str]) {
-      return specialOpcodesMap[str];
     }
     return str.toLowerCase().replace("operators_", "operator_");
   };
@@ -3289,6 +3435,7 @@ gui_tabs: "gandi_editor-wrapper_tabList",
         info.isReset = true;
       }
     }
+    if (info.shape === "cat") info.shape = "hat";
     info.categoryIsDefault = info.category === originalCategory;
     info.shapeIsDefault = info.shape === originalShape;
   }
@@ -5113,6 +5260,16 @@ case "variables":
       みどりのはたがクリックされたとき: "EVENT_WHENFLAGCLICKED"
     }
   };
+  const faceParts = [
+    "faceSensing.nose",
+    "faceSensing.mouth",
+    "faceSensing.leftEye",
+    "faceSensing.rightEye",
+    "faceSensing.betweenEyes",
+    "faceSensing.leftEar",
+    "faceSensing.rightEar",
+    "faceSensing.topOfHead"
+  ];
   const soundEffects = ["SOUND_EFFECTS_PITCH", "SOUND_EFFECTS_PAN"];
   const microbitWhen = ["microbit.gesturesMenu.moved", "microbit.gesturesMenu.shaken", "microbit.gesturesMenu.jumped"];
   const osis = ["CONTROL_STOP_OTHER"];
@@ -5141,6 +5298,7 @@ case "variables":
     const locale = {
       commands: {},
       dropdowns: {},
+      faceParts: listFor(faceParts),
       soundEffects: listFor(soundEffects),
       microbitWhen: listFor(microbitWhen),
       osis: listFor(osis),
@@ -5224,6 +5382,7 @@ case "variables":
       this.#initTabsContainer(content, containerClassName);
     }
 #initTabsContainer(content, containerClassName) {
+      const isGandi2 = window.location.href.startsWith("https://www.ccw.site/gandi");
       this.tabsContainer = document.createElement("div");
       this.tabsContainer.className = this.addon.tab.scratchClass("gui_tabs", {
         others: containerClassName
@@ -5232,6 +5391,16 @@ case "variables":
       this.tabsHeader = document.createElement("div");
       this.tabsHeader.className = this.addon.tab.scratchClass("react-tabs_react-tabs__tab-list", "gui_tab-list");
       this.tabsContainer.append(this.tabsHeader);
+      if (isGandi2) {
+        this.tabPanelWrapper = document.createElement("div");
+        this.tabPanelWrapper.className = this.addon.tab.scratchClass("editor-wrapper_tabPanelWrapper");
+        this.tabPanelWrapper.style.marginTop = "50px";
+        this.tabsContainer.style.position = "relative";
+        this.tabsContainer.style.width = "100%";
+        this.tabsContainer.style.margin = "0";
+        this.tabsContainer.style.borderRadius = "0";
+        this.tabsContainer.append(this.tabPanelWrapper);
+      }
     }
 createTab(tabName, tabId, panelContent) {
       const tabHeader = document.createElement("div");
@@ -5254,9 +5423,17 @@ createTab(tabName, tabId, panelContent) {
         header: tabHeader,
         panel: tabPanel
       };
+      const isGandi2 = window.location.href.startsWith("https://www.ccw.site/gandi");
+      if (isGandi2) {
+        tabPanel.classList.add(this.addon.tab.scratchClass("editor-wrapper_ghost"));
+      }
       this.tabs.push(tab);
       this.tabsHeader.append(tabHeader);
-      this.tabsContainer.append(tabPanel);
+      if (this.tabPanelWrapper) {
+        this.tabPanelWrapper.append(tabPanel);
+      } else {
+        this.tabsContainer.append(tabPanel);
+      }
       const tabIndex = this.tabs.length - 1;
       tabHeader.addEventListener("click", () => this.switchTab(tabIndex));
     }
@@ -5275,6 +5452,7 @@ switchTab(tabIdOrIndex) {
         console.warn(`Invalid tab index: ${tabIndex}`);
         return;
       }
+      const isGandi2 = window.location.href.startsWith("https://www.ccw.site/gandi");
       const currentTab = this.tabs[this.currentTabIndex];
       currentTab.header.classList.remove(
         this.addon.tab.scratchClass("react-tabs_react-tabs__tab--selected"),
@@ -5284,6 +5462,9 @@ switchTab(tabIdOrIndex) {
         this.addon.tab.scratchClass("react-tabs_react-tabs__tab-panel--selected"),
         this.addon.tab.scratchClass("gui_is-selected")
       );
+      if (isGandi2) {
+        currentTab.panel.classList.add(this.addon.tab.scratchClass("editor-wrapper_ghost"));
+      }
       const newTab = this.tabs[tabIndex];
       newTab.header.classList.add(
         this.addon.tab.scratchClass("react-tabs_react-tabs__tab--selected"),
@@ -5293,172 +5474,25 @@ switchTab(tabIdOrIndex) {
         this.addon.tab.scratchClass("react-tabs_react-tabs__tab-panel--selected"),
         this.addon.tab.scratchClass("gui_is-selected")
       );
+      if (isGandi2) {
+        newTab.panel.classList.remove(this.addon.tab.scratchClass("editor-wrapper_ghost"));
+      }
       this.currentTabIndex = tabIndex;
     }
   }
-  var _GM_addStyle = (() => typeof GM_addStyle != "undefined" ? GM_addStyle : void 0)();
-  const style$1 = `
-.sa-text2blocks-textarea {
-  width: 100%;
-  height: 100%;
-  padding: 0.4em;
-  margin-bottom: 0.4em;
-  resize: none;
-}
-
-.sa-text2blocks-modal-container {
-  width: 70%;
-  height: 70%;
-}
-
-.sa-text2blocks-tabs-container {
-  height: calc(100% - 100px);
-}
-
-.sa-text2blocks-variables-panel {
-  padding: 10px;
-  overflow-y: auto;
-}
-
-.sa-text2blocks-variables-content {
-  width: 100%;
-  height: 100%;
-}
-
-.sa-text2blocks-button {
-  margin-right: 10px;
-}
-
-.sa-text2blocks-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Tables for variables and lists */
-.sa-text2blocks-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-}
-
-.sa-text2blocks-table th,
-.sa-text2blocks-table td {
-  padding: 10px;
-  text-align: left;
-  border-bottom: 1px solid var(--editorDarkMode-border, #ffffff0d);
-}
-
-.sa-text2blocks-table th {
-  background-color: var(--editorDarkMode-accent, #151515);
-  font-weight: 600;
-  font-size: 12px;
-  color: var(--editorDarkMode-page-text, #ffffff);
-}
-
-.sa-text2blocks-table tr:hover {
-  background-color: var(--editorDarkMode-input, #202020);
-}
-
-.sa-text2blocks-table-name-col {
-  width: 25%;
-  font-weight: 500;
-  word-break: break-word;
-  color: var(--editorDarkMode-page-text, #ffffff);
-}
-
-.sa-text2blocks-table-name-col span {
-  font-weight: 500;
-}
-
-.sa-text2blocks-table-action-col {
-  width: 20%;
-}
-
-.sa-text2blocks-table-config-col {
-  width: 55%;
-}
-
-/* Selects and inputs */
-.sa-text2blocks-select {
-  padding: 6px 8px;
-  border: 1px solid var(--editorDarkMode-border, #fc7c24);
-  border-radius: 4px;
-  background-color: var(--editorDarkMode-input, #202020);
-  color: var(--editorDarkMode-input-text, #ffffff);
-  font-size: 12px;
-  font-family: inherit;
-  cursor: pointer;
-  min-width: 100px;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.sa-text2blocks-select:hover {
-  border-color: var(--editorDarkMode-primary, #855cd6);
-}
-
-.sa-text2blocks-select:focus {
-  outline: none;
-  border-color: var(--editorDarkMode-primary, #855cd6);
-  box-shadow: 0 0 0 2px var(--editorDarkMode-primary-transparent15, #855cd626);
-}
-
-.sa-text2blocks-input {
-  padding: 6px 8px;
-  border: 1px solid var(--editorDarkMode-border, #fc7c24);
-  border-radius: 4px;
-  background-color: var(--editorDarkMode-input, #202020);
-  color: var(--editorDarkMode-input-text, #ffffff);
-  font-size: 12px;
-  font-family: inherit;
-  min-width: 80px;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.sa-text2blocks-input::placeholder {
-  color: var(--editorDarkMode-input-transparentText, rgba(255, 255, 255, 0.4));
-}
-
-.sa-text2blocks-input:hover {
-  border-color: var(--editorDarkMode-primary, #855cd6);
-}
-
-.sa-text2blocks-input:focus {
-  outline: none;
-  border-color: var(--editorDarkMode-primary, #855cd6);
-  box-shadow: 0 0 0 2px var(--editorDarkMode-primary-transparent15, #855cd626);
-}
-
-.sa-text2blocks-config-container {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-`;
-  _GM_addStyle(style$1);
   async function text2Blocks({ addon, console: console2, msg }) {
-    const Blockly = addon.Blockly;
-    const workspace = addon.workspace;
-    const vm = addon.vm;
-    const reduxState = addon.reduxState;
-    const userLang = reduxState.locales.locale;
+    const Blockly = await addon.tab.traps.getBlockly();
+    const workspace = addon.tab.traps.getWorkspace();
+    const vm = addon.tab.traps.vm;
+    const redux = addon.tab.redux;
+    const userLang = redux.state.locales.locale;
+    let menuMouseX = 0;
+    let menuMouseY = 0;
     loadLanguages({
-      en: getLocale("en", reduxState, Blockly),
-      ...userLang !== "en" ? { [userLang]: getLocale(userLang, reduxState, Blockly) } : {}
+      en: getLocale("en", redux.state, Blockly),
+      ...userLang !== "en" ? { [userLang]: getLocale(userLang, redux.state, Blockly) } : {}
     });
-    const editorMenu = document.querySelector("[class*=menu-bar_main-menu_]");
-    const devider = document.createElement("div");
-    devider.className = addon.tab.scratchClass("divider_divider", "menu-bar_divider");
-    editorMenu.appendChild(devider);
-    const menuItem = document.createElement("div");
-    menuItem.className = addon.tab.scratchClass("menu-bar_menu-bar-item", "menu-bar_no-offset", "menu-bar_hoverable");
-    menuItem.textContent = msg("main");
-    editorMenu.appendChild(menuItem);
-    menuItem.addEventListener("click", async () => {
+    async function openText2BlocksModal() {
       const modal = addon.tab.createModal(msg("main"), {
         isOpen: true,
         useEditorClasses: true
@@ -5484,6 +5518,15 @@ switchTab(tabIdOrIndex) {
       });
       tabManager.createTab(msg("issues"), "issues-tab", issuesPanel);
       tabManager.switchTab("code-tab");
+      if (addon.settings.get("autoPaste")) {
+        try {
+          const clipboardText = await navigator.clipboard.readText();
+          if (clipboardText) {
+            textarea.value = clipboardText;
+          }
+        } catch (e) {
+        }
+      }
       const variableMappings = new Map();
       const buttonRow = document.createElement("div");
       buttonRow.className = addon.tab.scratchClass("prompt_button-row");
@@ -5507,7 +5550,7 @@ switchTab(tabIdOrIndex) {
         if (text2blocks.variableNames.size === 0 && text2blocks.listNames.size === 0) {
           const emptyMsg = document.createElement("p");
           emptyMsg.textContent = msg("no-variables-lists");
-          emptyMsg.style.color = "var(--editorDarkMode-input-transparentText, rgba(255, 255, 255, 0.4))";
+          emptyMsg.style.color = "var(--editorDarkMode-input-transparentText, hsla(225, 15%, 40%, 0.6))";
           variablesPanel.appendChild(emptyMsg);
           return;
         }
@@ -5515,7 +5558,7 @@ switchTab(tabIdOrIndex) {
           const varTitle = document.createElement("h3");
           varTitle.textContent = msg("variables");
           varTitle.style.marginBottom = "10px";
-          varTitle.style.color = "var(--editorDarkMode-page-text, #ffffff)";
+          varTitle.style.color = "var(--editorDarkMode-page-text, #575e75)";
           variablesPanel.appendChild(varTitle);
           const varTable = createVariablesTable(Array.from(text2blocks.variableNames), "variable");
           variablesPanel.appendChild(varTable);
@@ -5525,7 +5568,7 @@ switchTab(tabIdOrIndex) {
           listTitle.textContent = msg("lists");
           listTitle.style.marginBottom = "10px";
           listTitle.style.marginTop = "20px";
-          listTitle.style.color = "var(--editorDarkMode-page-text, #ffffff)";
+          listTitle.style.color = "var(--editorDarkMode-page-text, #575e75)";
           variablesPanel.appendChild(listTitle);
           const listTable = createVariablesTable(Array.from(text2blocks.listNames), "list");
           variablesPanel.appendChild(listTable);
@@ -5538,7 +5581,7 @@ switchTab(tabIdOrIndex) {
         if (!hasErrors && !hasWarnings) {
           const emptyMsg = document.createElement("p");
           emptyMsg.textContent = msg("no-issues");
-          emptyMsg.style.color = "var(--editorDarkMode-input-transparentText, rgba(255, 255, 255, 0.4))";
+          emptyMsg.style.color = "var(--editorDarkMode-input-transparentText, hsla(225, 15%, 40%, 0.6))";
           issuesPanel.appendChild(emptyMsg);
           return;
         }
@@ -5595,7 +5638,7 @@ switchTab(tabIdOrIndex) {
           errorTitle.style.color = "#ff6b6b";
           issuesPanel.appendChild(errorTitle);
           const errorList = document.createElement("ul");
-          errorList.style.color = "var(--editorDarkMode-page-text, #ffffff)";
+          errorList.style.color = "var(--editorDarkMode-page-text, #575e75)";
           errorList.style.marginBottom = "20px";
           for (const error of text2blocks.errors) {
             const li = document.createElement("li");
@@ -5612,7 +5655,7 @@ switchTab(tabIdOrIndex) {
           warningTitle.style.color = "#ffd166";
           issuesPanel.appendChild(warningTitle);
           const warningList = document.createElement("ul");
-          warningList.style.color = "var(--editorDarkMode-page-text, #ffffff)";
+          warningList.style.color = "var(--editorDarkMode-page-text, #575e75)";
           for (const warning of text2blocks.warnings) {
             const li = document.createElement("li");
             li.textContent = formatErrorMessage(warning);
@@ -5779,7 +5822,7 @@ switchTab(tabIdOrIndex) {
       parseButton.addEventListener("click", async () => {
         try {
           const text = textarea.value;
-          text2blocks.text2blocks(text, userLang !== "en" ? [userLang, "en"] : ["en"]);
+          text2blocks.text2blocks(text, userLang !== "en" ? ["en", userLang] : ["en"]);
           console2.log("Converted blocks JSON:", text2blocks.blockJson);
           console2.log("Variable names:", text2blocks.variableNames);
           console2.log("List names:", text2blocks.listNames);
@@ -5863,10 +5906,20 @@ switchTab(tabIdOrIndex) {
             }
           }
           text2blocks.applyVariableMappings(finalVariableMappings);
+          const VERTICAL_OFFSET = 50;
+          const HORIZONTAL_OFFSET = 80;
+          let offsetIndex = 0;
+          for (const block of text2blocks.blockJson) {
+            if (block.topLevel) {
+              block.x = menuMouseX + HORIZONTAL_OFFSET * offsetIndex;
+              block.y = menuMouseY + VERTICAL_OFFSET * offsetIndex;
+              offsetIndex++;
+            }
+          }
           await vm.shareBlocksToTarget(text2blocks.blockJson, target.id);
           vm.emitWorkspaceUpdate();
           vm.emitTargetsUpdate();
-          workspace.updateToolbox(reduxState.scratchGui.toolbox.toolboxXML);
+          workspace.updateToolbox(redux.state.scratchGui.toolbox.toolboxXML);
           workspace.toolboxRefreshEnabled_ = true;
           remove();
         } catch (error) {
@@ -5874,7 +5927,41 @@ switchTab(tabIdOrIndex) {
           alert("Apply failed: " + error.message);
         }
       });
-    });
+    }
+    addon.tab.createBlockContextMenu(
+      (items) => {
+        if (addon.self.disabled) return items;
+        const gesture = workspace.currentGesture_;
+        if (gesture) {
+          const event = Blockly.registry ? gesture.mostRecentEvent : gesture.mostRecentEvent_;
+          if (event) {
+            const svgPoint = Blockly.utils.mouseToSvg ? Blockly.utils.mouseToSvg(event, workspace.getParentSvg(), workspace.getInverseScreenCTM()) : Blockly.browserEvents.mouseToSvg(event, workspace.getParentSvg(), workspace.getInverseScreenCTM());
+            const wsPoint = Blockly.utils.svgMath ? Blockly.utils.svgMath.screenToWsCoordinates(workspace, svgPoint) : svgPoint;
+            if (!Blockly.utils.svgMath) {
+              const scale = workspace.scale;
+              const origin = workspace.getOriginOffsetInPixels();
+              menuMouseX = (svgPoint.x - origin.x) / scale;
+              menuMouseY = (svgPoint.y - origin.y) / scale;
+            } else {
+              menuMouseX = wsPoint.x;
+              menuMouseY = wsPoint.y;
+            }
+          }
+        }
+        const pasteItemIndex = items.findIndex((obj) => obj._isDevtoolsFirstItem);
+        const insertBeforeIndex = pasteItemIndex !== -1 ? pasteItemIndex : items.length;
+        items.splice(insertBeforeIndex, 0, {
+          enabled: true,
+          text: msg("main"),
+          callback: () => {
+            openText2BlocksModal();
+          },
+          separator: true
+        });
+        return items;
+      },
+      { workspace: true }
+    );
     function getVariablesOfTarget(target, type = "variable") {
       type = type === "list" ? "list" : "";
       return Array.from(
@@ -5885,655 +5972,183 @@ new Set([
       );
     }
   }
+  var _GM_addStyle = (() => typeof GM_addStyle != "undefined" ? GM_addStyle : void 0)();
   const style = `
-/* Page */
-html:not(.sa-editor),
-body:not(.sa-editor > *, .scratchCommentBody),
-#view {
-  background-color: var(--darkWww-page, #fcfcfc);
-  background-image: var(
-    --darkWww-page-scratchr2BackgroundImage,
-    url("https://cdn.scratch.mit.edu/scratchr2/static/images/scratch-bg.png")
-  );
-}
-body:not(.sa-editor > *, .scratchCommentBody) {
-  color: var(--darkWww-page-scratchr2Text, #322f31);
-  font-family: "Helvetica Neue", Arial, sans-serif;
-}
-p {
-  color: inherit;
-}
-#view {
-  margin-top: 35px;
-}
-.subnavigation {
-  top: 35px;
-}
-@media (min-width: 942px) {
-  .inner {
-    width: 940px;
-  }
-}
-
-/* Links */
-a {
-  font-weight: normal;
-  text-shadow: none;
-}
-a,
-a:link,
-a:visited,
-a:active {
-  color: var(--darkWww-link-scratchr2, #855cd6);
-}
-a:hover {
-  color: var(--darkWww-link-scratchr2, #855cd6);
-  text-decoration: underline;
-}
-
-/* Buttons */
-.button {
-  background-color: var(--darkWww-button-scratchr2, #855cd6);
-  border-radius: 5px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 1px 2px rgba(0, 0, 0, 0.05);
-  font-size: 13px;
-  font-weight: normal;
-}
-:root:not(.sa-editor) .button.white {
-  background-image: linear-gradient(
-    var(--darkWww-box-scratchr2ButtonGradientTop, white),
-    var(--darkWww-box-scratchr2ButtonGradientBottom, #ccc)
-  );
-  border: 1px solid var(--darkWww-box-scratchr2ButtonBorder, #999);
-  color: var(--darkWww-box-scratchr2ButtonText, #666);
-  text-shadow: 0 1px var(--darkWww-box, white);
-}
-:root:not(.sa-editor) .button.white:hover {
-  background-color: var(--darkWww-box-scratchr2ButtonHover, #e6e6e6);
-  background-image: none;
-}
-.forms-close-button {
-  width: auto;
-  height: auto;
-  padding: 2px 5px 3px 5px;
-  background-color: rgba(0, 0, 0, 0.1);
-  border: 3px solid transparent;
-  border-radius: 35px;
-  box-shadow: none;
-  font-size: 16px;
-  line-height: 13.5px;
-}
-.forms-close-button img {
-  display: none;
-}
-.forms-close-button::after {
-  content: "x";
-}
-
-/* Inputs */
-.input,
-:root:not(.sa-editor) .select select,
-.textarea {
-  padding: 4px;
-  background-color: var(--darkWww-box, white);
-  border-color: var(--darkWww-border-20, #ccc);
-  border-radius: 3px;
-  color: var(--darkWww-box-scratchr2InputText, #555);
-  font-size: 13px;
-}
-.input,
-.textarea {
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  transition:
-    border-color 0.2s linear,
-    box-shadow 0.2s linear;
-}
-.input:focus,
-.textarea:focus {
-  border-color: rgba(82, 168, 236, 0.8);
-  box-shadow:
-    inset 0 1px 1px rgba(0, 0, 0, 0.075),
-    0 0 8px rgba(82, 168, 236, 0.6);
-  transition:
-    border-color 0.2s linear,
-    box-shadow 0.2s linear;
-}
-.select label:empty {
-  display: none;
-}
-:root:not(.sa-editor) .select select {
-  appearance: auto;
-  height: 28px;
-  background-image: none;
-}
-:root:not(.sa-editor) .select select:focus,
-:root:not(.sa-editor) .select select:hover {
-  background-color: var(--darkWww-box, white);
-  background-image: none;
-  color: var(--darkWww-box-scratchr2InputText, #555);
-}
-:root:not(.sa-editor) .select select:focus {
-  border-color: var(--darkWww-border-20, #ccc);
-}
-:root:not(.sa-editor) .select select:focus-visible {
-  outline: revert;
-}
-:root:not(.sa-editor) .select select > option {
-  background-color: var(--darkWww-box, white);
-  color: var(--darkWww-box-scratchr2InputText, #555);
-}
-.inplace-input,
-.inplace-textarea {
-  background-color: var(--darkWww-box, white);
-  border-color: var(--darkWww-border-20, #ccc);
-  border-radius: 3px;
-  transition: none;
-}
-.inplace-textarea {
-  margin: 0 -2px;
-  width: calc(100% + 4px);
-  padding: 0;
-  font-size: 13px;
-  line-height: 18px;
-  transition: none;
-}
-.inplace-input:focus,
-.inplace-textarea:focus {
-  border-style: dashed;
-  border-color: var(--darkWww-border-20, #ccc);
-  box-shadow: none;
-}
-.inplace-input:not([value=""], :hover, :focus),
-.inplace-textarea:not(:empty, :hover, :focus) {
-  background-color: transparent;
-  border-color: transparent;
-}
-.inplace-textarea::placeholder {
-  font-style: normal;
-}
-
-/* Box component */
-.box {
-  border-color: var(--darkWww-box-scratchr2Border, #e0e0e0);
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.27);
-}
-.box .box-header {
-  height: auto;
-  padding: 7px 20px;
-  background-color: var(--darkWww-gray-scratchr2, #f7f7f7);
-  border-bottom-color: var(--darkWww-box-scratchr2Border, #e0e0e0);
-  text-shadow: var(--darkWww-gray-scratchr2TextShadow, 0 1px white);
-}
-.box .box-header h4 {
-  color: var(--darkWww-gray-scratchr2HeaderText, #554747);
-  line-height: 20px;
-}
-@media (min-width: 942px) {
-  .box .box-header h4 {
-    font-size: 1rem;
-  }
-}
-.box .box-header p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 20px;
-}
-.box .box-content {
-  color: var(--darkWww-box-scratchr2Text, #322f31);
-}
-
-/* Navigation bar */
-#navigation {
-  height: 35px;
-  background-color: var(--darkWww-navbar-scratchr2, #855cd6);
-  border: none;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-}
-#navigation .inner > ul {
-  height: 35px;
-}
-#navigation .logo a {
-  margin: 0;
-  width: 80px;
-  height: 35px;
-  background-image: url("https://cdn.scratch.mit.edu/scratchr2/static/images/logo_sm.png");
-  background-position: left center;
-  background-size: auto;
-  transition: none;
-}
-#navigation .logo a:hover {
-  background-image: url("https://cdn.scratch.mit.edu/scratchr2/static/images/logo_sm_highlight.png");
-  background-size: auto;
-  transition: none;
-}
-#navigation .link > a {
-  height: 35px;
-  padding: 0 15px;
-  background-clip: padding-box;
-  border-left: 1px solid transparent;
-  font-size: 15px;
-  font-weight: normal;
-  line-height: 35px;
-}
-#navigation .inner > ul > li.search {
-  margin: 0;
-  padding: 6px 10px;
-  height: auto;
-  border-left: 1px solid transparent;
-}
-#navigation .inner > ul > li.search .form {
-  /* Must be less than input height to center input correctly */
-  line-height: 18px;
-}
-#navigation .inner > ul > li.search .input {
-  margin: 0;
-  background-color: var(--darkWww-box, white);
-  border-radius: 10px;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-}
-#navigation .inner > ul > li.search .input[type="text"] {
-  width: calc(100% - 38px);
-  height: 14px;
-  padding: 4px;
-  padding-left: 33px;
-  color: var(--darkWww-box-scratchr2InputText, #555);
-  font-size: 13px;
-  transition: none;
-}
-#navigation .inner > ul > li.search .input[type="text"]:focus {
-  background-color: var(--darkWww-box, white);
-  transition: none;
-}
-#navigation .inner > ul > li.search .input[type="text"]::placeholder {
-  color: var(--darkWww-box-scratchr2InputPlaceholder, #bbb);
-}
-#navigation .inner > ul > li.search .button {
-  margin: 0;
-}
-#navigation .inner > ul > li.search .btn-search {
-  width: 0;
-  height: 22px;
-  padding: 0;
-  padding-left: 28px;
-  background-image: url("https://cdn.scratch.mit.edu/scratchr2/static/images/nav-search-glass.png");
-  background-position: 9px center;
-  background-size: auto;
-  border-right: 1px solid var(--darkWww-border-20, #ccc);
-  border-radius: 0;
-  opacity: 0.8;
-  cursor: default;
-}
-#navigation .messages > a {
-  width: 42px;
-  padding: 0;
-  background-image: none;
-}
-#navigation .messages > a::before {
-  /* Move icon into a pseudo-element so filters can be applied to it separately */
-  content: "";
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
+.sa-text2blocks-textarea {
   width: 100%;
   height: 100%;
-  background-image: url("https://cdn.scratch.mit.edu/scratchr2/static/images/nav-notifications.png");
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: auto;
+  padding: 0.4em;
+  margin-bottom: 0.4em;
+  resize: none;
 }
-#navigation .messages > a:hover::before {
-  background-size: auto;
+
+.sa-text2blocks-modal-container {
+  width: 70%;
+  height: 70%;
 }
-#navigation .messages .message-count.show {
-  top: 4px;
-  right: 0;
-  min-width: 16px;
-  height: 15px;
-  padding: 0;
-  background-color: var(--darkWww-messageIndicatorColor-scratchr2, #f9a739);
-  border-radius: 10px;
-  font-size: 9px;
-  line-height: 14px;
-  text-align: center;
+
+.sa-text2blocks-tabs-container {
+  height: calc(100% - 100px);
 }
-#navigation .mystuff > a {
-  width: 45px;
-  padding: 0;
-  background-image: url("https://cdn.scratch.mit.edu/scratchr2/static/images/mystuff.png");
-  background-size: auto;
+
+.sa-text2blocks-variables-panel {
+  padding: 10px;
+  overflow-y: auto;
 }
-#navigation .mystuff > a:hover {
-  background-size: auto;
+
+.sa-text2blocks-variables-content {
+  width: 100%;
+  height: 100%;
 }
-.account-nav .user-info {
-  display: inline-block;
-  height: 35px;
-  padding: 0 10px;
-  background-clip: padding-box;
-  border-left: 1px solid transparent;
-  border-right: 1px solid transparent;
-  line-height: 35px;
+
+.sa-text2blocks-button {
+  margin-right: 10px;
 }
-.account-nav .user-info .avatar-wrapper {
-  vertical-align: middle;
-  margin-top: -3px;
-  margin-right: 5px;
-  --avatar-size: 26px;
-}
-.account-nav .user-info .avatar {
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 1px;
-}
-.account-nav .user-info::after {
-  margin-left: 4px;
-  width: 0;
-  height: 0;
-  background-image: none;
-  border-top: 4px solid var(--darkWww-navbar-scratchr2Text, white);
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
+
+.sa-text2blocks-button:disabled {
   opacity: 0.5;
-}
-#navigation .link.join > a,
-#navigation .link.login-item > a {
-  height: 33px;
-  padding: 0 10px;
-  font-weight: bold;
-  line-height: 33px;
-}
-#navigation .link > a:hover,
-#navigation .inner > ul > li.right a:hover,
-.account-nav .user-info.open {
-  background-color: var(--darkWww-navbar-scratchr2ItemHover, rgba(0, 0, 0, 0.1));
-}
-#navigation .inner > ul > li.right.join > a:hover {
-  background-color: #f9a739;
-  color: white;
+  cursor: not-allowed;
 }
 
-/* Account dropdown */
-.account-nav .dropdown {
-  top: 34px;
-  right: 1px;
-  min-width: 160px;
-  max-width: 220px;
-  box-sizing: content-box;
-  background-color: var(--darkWww-navbar-scratchr2, #855cd6);
-  background-clip: padding-box;
-  border-color: var(--darkWww-border-20, #ccc);
-  border-top: none;
-  border-right: none;
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 4px;
-  box-shadow:
-    inset 0 1px 1px rgba(100, 100, 100, 0.25),
-    0 1px 1px rgba(0, 0, 0, 0.25);
-}
-.account-nav .dropdown > li {
-  margin: 0;
-}
-.account-nav .dropdown > li a {
-  padding-right: 5px;
-  font-weight: normal;
-}
-.account-nav .dropdown > li.divider {
-  margin-top: 10px;
-  background-clip: padding-box;
-  border-color: transparent;
-}
-.account-nav .dropdown > li.divider a {
-  padding: 0 9px;
-}
-.account-nav .dropdown > li:last-child {
-  border-bottom-left-radius: 3px;
-  border-bottom-right-radius: 3px;
+/* Tables for variables and lists */
+.sa-text2blocks-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
 }
 
-/* Login dropdown */
-.dropdown.with-arrow {
-  margin-top: 11px;
-  min-width: 160px;
-  max-width: 220px;
-  padding: 1px;
-  border-color: transparent;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-.dropdown.with-arrow::before {
-  top: -11px;
-  width: 0;
-  height: 0;
-  background-color: transparent;
-  border: 11px solid transparent;
-  border-top: none;
-  border-bottom-color: var(--darkWww-navbar-scratchr2, #855cd6);
-  border-radius: 0;
-  transform: none;
-}
-.login {
-  width: auto;
-  padding: 9px 14px;
-  line-height: 18px;
-}
-.login label {
-  margin-bottom: 8px;
-  padding: 0;
-  color: var(--darkWww-navbar-scratchr2Text, #d9edf5);
-  font-weight: normal;
-}
-.login .row {
-  margin: 0;
-}
-.login .input {
-  margin-bottom: 8px;
-  width: 170px;
-  height: 18px;
-}
-.login .submit-row {
-  justify-content: flex-start;
-}
-.login .button {
-  margin: 3px;
-  height: 32px;
-  box-sizing: border-box;
-  padding: revert;
-  line-height: 30px;
-}
-.login .submit-button {
-  margin-top: 4px;
-}
-.login a {
-  margin: 0;
-  line-height: 33px;
-}
-.login a,
-.login a:link,
-.login a:visited,
-.login a:active {
-  color: var(--darkWww-navbar-scratchr2Text, #d9edf5);
-}
-#navigation .inner > ul > li.right .login a:hover {
-  background-color: transparent;
-}
-
-/* Footer */
-#footer {
-  height: 220px;
-  padding-top: 20px;
-  padding-bottom: 0;
-  background-color: var(--darkWww-footer-scratchr2, #ececec);
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.14);
-  color: var(--darkWww-footer-scratchr2Text, #666);
-}
-#footer:not(:last-child) {
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.14);
-}
-#footer .lists {
-  margin-bottom: 10px;
-  padding-left: 3px;
-  justify-content: flex-start;
-}
-#footer .lists dl {
-  flex-grow: 1;
-  flex-basis: 0;
-  margin: 0;
-  font-size: 13px;
-}
-#footer .lists dt {
-  margin-bottom: 5px;
-  font-size: 14px;
-  line-height: 1.25em;
-}
-#footer .lists dd {
-  margin: 0;
-  line-height: 20px;
-}
-.language-chooser .select .control-label {
-  display: none;
-}
-.language-chooser .select select {
-  margin-right: 30px;
-}
-
-/* collapse-footer */
-:root {
-  --footer-hover-height: 210px !important;
-}
-
-/* Modals */
-.modal-overlay,
-.youtube-video-modal-overlay,
-.cards-modal-overlay {
-  background-color: rgba(0, 0, 0, 0.8);
-}
-.modal-content,
-.youtube-video-modal-container,
-.cards-modal-container {
-  border-radius: 6px;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
-}
-.modal-content-close,
-.youtube-video-modal-container .cards-modal-header .close-button,
-.cards-modal-container .cards-modal-header .close-button {
-  top: 12px;
-  right: 15px;
-  width: auto;
-  height: auto;
-  background-color: transparent;
-  background-image: none;
-  border: none;
-  color: var(--darkWww-box-scratchr2BlackText, black);
-  font-size: 20px;
-  font-weight: bold;
-  line-height: 13.5px;
-  opacity: 0.25;
-}
-.modal-content-close:hover,
-.youtube-video-modal-container .cards-modal-header .close-button:hover,
-.cards-modal-container .cards-modal-header .close-button:hover {
-  opacity: 0.4;
-}
-.modal-content-close::before,
-.youtube-video-modal-container .cards-modal-header .close-button::after,
-.cards-modal-container .cards-modal-header .close-button::after {
-  content: "d7"; /* U+00D7 MULTIPLICATION SIGN */
-}
-.modal-content-close-img,
-.youtube-video-modal-container .cards-modal-header .close-button img {
-  display: none;
-}
-.modal-header,
-.report-modal-header,
-.share-modal .title,
-.update-thumbnail-info-modal .update-thumbnail-info-modal-title,
-.youtube-video-modal-container .cards-modal-header.mint-green,
-.cards-modal-container .cards-modal-header,
-.mod-feedback .feedback-header {
-  padding: 5px 15px;
-  background-color: transparent;
-  box-shadow: inset 0 -1px 0 0 var(--darkWww-border-5, #eee);
-}
-.modal-sizes .modal-header {
-  height: auto;
-  padding-top: 5px;
-}
-.modal-title,
-.report-content-label,
-.share-modal .title,
-.update-thumbnail-info-modal .update-thumbnail-info-modal-title,
-.cards-modal-container .cards-modal-header .cards-title {
-  color: var(--darkWww-box-scratchr2HeaderText, #554747);
+.sa-text2blocks-table th,
+.sa-text2blocks-table td {
+  padding: 10px;
   text-align: left;
-  font-size: 18px;
-  line-height: 32px;
+  border-bottom: 1px solid var(--editorDarkMode-border, rgba(0, 0, 0, 0.15));
 }
-.sa-modal-title {
-  height: auto !important;
-  padding: 5px 15px !important;
-  background-color: transparent !important;
-  box-shadow: inset 0 -1px 0 0 var(--darkWww-border-5, #eee) !important;
-  color: var(--darkWww-box-scratchr2HeaderText, #554747) !important;
-  text-align: left !important;
+
+.sa-text2blocks-table th {
+  background-color: var(--editorDarkMode-accent, white);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--editorDarkMode-page-text, #575e75);
 }
-.tou-modal .tou-step-top-bar {
-  display: none;
+
+.sa-text2blocks-table tr:hover {
+  background-color: var(--editorDarkMode-input, white);
 }
-.tou-modal .tou-step-inner-content a.link {
-  color: var(--darkWww-box-greenText, #328554);
+
+.sa-text2blocks-table-name-col {
+  width: 25%;
+  font-weight: 500;
+  word-break: break-word;
+  color: var(--editorDarkMode-page-text, #575e75);
 }
-.sa-confirm-text {
-  margin-bottom: 0.9375rem !important;
-  color: var(--darkWww-box-scratchr2Text, #322f31);
-  font-size: 13px;
+
+.sa-text2blocks-table-name-col span {
+  font-weight: 500;
 }
-.modal-content .action-buttons {
-  margin: 0;
-  padding: 14px 15px 15px;
-  background-color: var(--darkWww-gray-scratchr2TableCell, #f5f5f5);
-  border-top: 1px solid var(--darkWww-border, #ddd);
-  box-shadow: inset 0 1px 0 var(--darkWww-gray-boxHighlight, white);
+
+.sa-text2blocks-table-action-col {
+  width: 20%;
 }
-.modal-content .action-button {
-  height: 32px;
-  padding: 0 6px;
-  line-height: 30px;
+
+.sa-text2blocks-table-config-col {
+  width: 55%;
 }
-.modal-content .action-button.disabled,
-.modal-content .action-button.disabled:hover {
-  background-image: linear-gradient(
-    var(--darkWww-box-scratchr2ButtonGradientTop, white),
-    var(--darkWww-box-scratchr2ButtonGradientBottom, #ccc)
-  );
-  border-color: var(--darkWww-box-scratchr2ButtonBorder, #999);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 1px 2px rgba(0, 0, 0, 0.05);
-  color: var(--darkWww-box-scratchr2ButtonText, #666);
-  text-shadow: 0 1px var(--darkWww-box, white);
-  opacity: 0.5;
+
+/* Selects and inputs */
+.sa-text2blocks-select {
+  padding: 6px 8px;
+  border: 1px solid var(--editorDarkMode-border, rgba(0, 0, 0, 0.15));
+  border-radius: 4px;
+  background-color: var(--editorDarkMode-input, white);
+  color: var(--editorDarkMode-input-text, #575e75);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 100px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
-.modal-content .submit-button {
-  border: 1px solid var(--darkWww-button-scratchr2, #855cd6);
+
+.sa-text2blocks-select:hover {
+  border-color: var(--editorDarkMode-primary, #855cd6);
 }
-.modal-content .submit-button:hover {
-  background-color: var(--darkWww-button-scratchr2Hover, #7854c0);
+
+.sa-text2blocks-select:focus {
+  outline: none;
+  border-color: var(--editorDarkMode-primary, #855cd6);
+  box-shadow: 0 0 0 2px var(--editorDarkMode-primary-transparent15, #855cd626);
 }
-.mod-feedback .feedback-content .feedback-form .feedback-submit {
-  background-color: #4d97ff;
-  background-image: none;
-  border: 1px solid #4c97ff;
-  color: white;
-  text-shadow: none;
+
+.sa-text2blocks-input {
+  padding: 6px 8px;
+  border: 1px solid var(--editorDarkMode-border, rgba(0, 0, 0, 0.15));
+  border-radius: 4px;
+  background-color: var(--editorDarkMode-input, white);
+  color: var(--editorDarkMode-input-text, #575e75);
+  font-size: 12px;
+  font-family: inherit;
+  min-width: 80px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
-.mod-feedback .feedback-content .feedback-form .feedback-submit:hover {
-  background-color: #4280d7;
+
+.sa-text2blocks-input::placeholder {
+  color: var(--editorDarkMode-input-transparentText, hsla(225, 15%, 40%, 0.6));
+}
+
+.sa-text2blocks-input:hover {
+  border-color: var(--editorDarkMode-primary, #855cd6);
+}
+
+.sa-text2blocks-input:focus {
+  outline: none;
+  border-color: var(--editorDarkMode-primary, #855cd6);
+  box-shadow: 0 0 0 2px var(--editorDarkMode-primary-transparent15, #855cd626);
+}
+
+.sa-text2blocks-config-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 `;
   _GM_addStyle(style);
+  const isTurboWarp = window.location.host === "turbowarp.org" || !!window.__SB2S_DESKTOP_TURBOWARP__;
+  const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi");
+  if (isTurboWarp) {
+    _GM_addStyle(`
+    :root {
+      --editorDarkMode-page-text: var(--text-primary);
+      --editorDarkMode-input: var(--input-background);
+      --editorDarkMode-input-text: var(--text-primary);
+      --editorDarkMode-primary-transparent15: var(--looks-transparent);
+      --editorDarkMode-input-transparentText: var(--text-primary-transparent-default);
+      --ui-text-primary-transparent: var(--text-primary);
+    }
+  `);
+  } else if (isGandi) {
+    _GM_addStyle(`
+    :root {
+      --editorDarkMode-page-text: var(--theme-text-primary);
+      --editorDarkMode-input-text: var(--theme-text-primary);
+      --ui-text-primary-transparent: var(--theme-text-primary);
+      --editorDarkMode-accent: var(--theme-color-350);
+      --editorDarkMode-accent-text: var(--theme-text-primary);
+      --editorDarkMode-input: var(--theme-color-50);
+      --editorDarkMode-primary: var(--theme-brand-color);
+      --editorDarkMode-primary-transparent15: color-mix(in srgb, var(--theme-brand-color) 15%, transparent);
+      --editorDarkMode-border: var(--theme-color-200);
+      --editorDarkMode-input-transparentText: color-mix(in srgb, var(--theme-text-primary) 60%, transparent);
+    }
+    html[theme="dark"] select option {
+      background-color: black;
+      color: white;
+    }
+  `);
+  }
   const zhCN = {
     main: "将文本转换为积木",
     "parse-button": "解析",
