@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         将 scratchblocks 转换为 Scratch 积木块
 // @namespace    https://luyifei2011.github.io/
-// @version      0.0.5-alpha
+// @version      0.0.6-alpha
 // @author       Lu Yifei
 // @description  将 scratchblocks 代码转换为 Scratch 积木块
 // @copyright    2025-2026, Lu Yifei (https://github.com/LuYifei2011), licensed under GPL-3.0
@@ -6188,7 +6188,7 @@ new Set([
     });
   }
   function waitForLoaded() {
-    if (document.querySelector(".blocklyWorkspace")) {
+    if (document.querySelector(".blocklyWorkspace") && (window.Blockly || window.ScratchBlocks)) {
       setTimeout(main, 1e3);
     } else {
       setTimeout(waitForLoaded, 100);
