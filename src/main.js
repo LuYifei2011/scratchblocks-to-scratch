@@ -26,7 +26,7 @@ async function main() {
 }
 
 function waitForLoaded() {
-  if (document.querySelector(".blocklyWorkspace")) {
+  if (document.querySelector(".blocklyWorkspace") && (window.Blockly || window.ScratchBlocks)) {
     setTimeout(main, 1000);
   } else {
     setTimeout(waitForLoaded, 100);
