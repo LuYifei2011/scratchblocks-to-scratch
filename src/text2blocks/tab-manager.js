@@ -18,7 +18,7 @@ export class TabManager {
    */
   #initTabsContainer(content, containerClassName) {
     const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi");
-    
+
     this.tabsContainer = document.createElement("div");
     this.tabsContainer.className = this.addon.tab.scratchClass("gui_tabs", {
       others: containerClassName,
