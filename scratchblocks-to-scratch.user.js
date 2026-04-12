@@ -1,23 +1,18 @@
 // ==UserScript==
 // @name         将 scratchblocks 转换为 Scratch 积木块
 // @namespace    https://luyifei2011.github.io/
-// @version      0.0.4-alpha
+// @version      0.0.5-alpha
 // @author       Lu Yifei
 // @description  将 scratchblocks 代码转换为 Scratch 积木块
 // @copyright    2025-2026, Lu Yifei (https://github.com/LuYifei2011), licensed under GPL-3.0
 // @homepage     https://github.com/LuYifei2011/scratchblocks-to-scratch
 // @supportURL   https://github.com/LuYifei2011/scratchblocks-to-scratch/issues
 // @updateURL    https://luyifei2011.github.io/scratchblocks-to-scratch/scratchblocks-to-scratch.user.js
-// @match        https://turbowarp.org/editor/*
-// @match        https://turbowarp.org/editor
-// @match        https://scratch.mit.edu/projects/*/editor
-// @match        https://scratch.mit.edu/projects/editor
-// @match        https://www.ccw.site/creator/project/*
-// @match        https://www.ccw.site/creator
-// @match        https://www.ccw.site/creator/
-// @match        https://www.ccw.site/gandi/project/*
-// @match        https://www.ccw.site/gandi
-// @match        https://www.ccw.site/gandi/
+// @match        https://turbowarp.org/editor*
+// @match        https://scratch.mit.edu/projects/*/editor*
+// @match        https://scratch.mit.edu/projects/editor*
+// @match        https://www.ccw.site/creator*
+// @match        https://www.ccw.site/gandi*
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // ==/UserScript==
@@ -29,7 +24,7 @@
     "close-s3": "data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3LjQ4IDcuNDgiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDpub25lO3N0cm9rZTojZmZmO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2Utd2lkdGg6MnB4O308L3N0eWxlPjwvZGVmcz48dGl0bGU+aWNvbi0tYWRkPC90aXRsZT48bGluZSBjbGFzcz0iY2xzLTEiIHgxPSIzLjc0IiB5MT0iNi40OCIgeDI9IjMuNzQiIHkyPSIxIi8+PGxpbmUgY2xhc3M9ImNscy0xIiB4MT0iMSIgeTE9IjMuNzQiIHgyPSI2LjQ4IiB5Mj0iMy43NCIvPjwvc3ZnPg==",
     "close-gandi": '<svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.657 6.112L6.343 17.426m0-11.314l11.314 11.314" stroke="#566276" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
   };
-  const isGandi$2 = window.location.href.startsWith("https://www.ccw.site/gandi/project/");
+  const isGandi$2 = window.location.href.startsWith("https://www.ccw.site/gandi");
   const createEditorModal = (tab, title, { isOpen = false } = {}) => {
     const container = Object.assign(document.createElement("div"), {
       className: tab.scratchClass("modal_modal-overlay"),
@@ -6194,7 +6189,7 @@ new Set([
   }
   function waitForLoaded() {
     if (document.querySelector(".blocklyWorkspace")) {
-      main();
+      setTimeout(main, 1e3);
     } else {
       setTimeout(waitForLoaded, 100);
     }
