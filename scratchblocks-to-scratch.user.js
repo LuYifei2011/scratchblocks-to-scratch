@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         将 scratchblocks 转换为 Scratch 积木块
 // @namespace    https://luyifei2011.github.io/
-// @version      0.0.6-alpha
+// @version      0.0.7-alpha
 // @author       Lu Yifei
 // @description  将 scratchblocks 代码转换为 Scratch 积木块
 // @copyright    2025-2026, Lu Yifei (https://github.com/LuYifei2011), licensed under GPL-3.0
@@ -6144,7 +6144,7 @@ new Set([
     }
   `);
   }
-  const zhCN = {
+  const zhCn = {
     main: "将文本转换为积木",
     "parse-button": "解析",
     "apply-button": "应用",
@@ -6167,6 +6167,33 @@ new Set([
     variable: "变量",
     list: "列表"
   };
+  const en = {
+    main: "Convert Text to Blocks",
+    "parse-button": "Parse",
+    "apply-button": "Apply",
+    code: "Code",
+    variables: "Variables",
+    issues: "Issues",
+    lists: "Lists",
+    name: "Name",
+    action: "Action",
+    configuration: "Configuration",
+    "create-new": "Create New",
+    "use-existing": "Use Existing",
+    "new-name-placeholder": "Default: {name}",
+    errors: "Errors",
+    warnings: "Warnings",
+    "warnings-confirm-content": `There are warnings. They might cause unexpected behavior or even break your project. Do you want to proceed? If you don't know, please click "Cancel".`,
+    "no-variables-lists": "No variables or lists found.",
+    "no-issues": "No issues found.",
+    "duplicate-name-error": "Already exists:\n{names}",
+    variable: "Variable",
+    list: "List"
+  };
+  const msgs = {
+    "zh-cn": zhCn,
+    en
+  };
   async function main() {
     const api = window.api = await getAddonApi();
     console.log("[text2blocks] API", api);
@@ -6177,7 +6204,7 @@ new Set([
         error: (...args) => console.error("[text2blocks]", ...args)
       },
       msg: (t, vars) => {
-        let str = zhCN[t] || t;
+        let str = msgs[api?.tab?.redux?.state?.locales?.locale]?.[t] || msgs["en"]?.[t] || t;
         if (vars) {
           for (const [key, val] of Object.entries(vars)) {
             str = str.replaceAll(`{${key}}`, val);
