@@ -17,6 +17,8 @@ export class TabManager {
    * @private
    */
   #initTabsContainer(content, containerClassName) {
+    const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi");
+    
     this.tabsContainer = document.createElement("div");
     this.tabsContainer.className = this.addon.tab.scratchClass("gui_tabs", {
       others: containerClassName,
@@ -26,6 +28,17 @@ export class TabManager {
     this.tabsHeader = document.createElement("div");
     this.tabsHeader.className = this.addon.tab.scratchClass("react-tabs_react-tabs__tab-list", "gui_tab-list");
     this.tabsContainer.append(this.tabsHeader);
+
+    if (isGandi) {
+      this.tabPanelWrapper = document.createElement("div");
+      this.tabPanelWrapper.className = this.addon.tab.scratchClass("editor-wrapper_tabPanelWrapper");
+      this.tabPanelWrapper.style.marginTop = "50px";
+      this.tabsContainer.style.position = "relative";
+      this.tabsContainer.style.width = "100%";
+      this.tabsContainer.style.margin = "0";
+      this.tabsContainer.style.borderRadius = "0";
+      this.tabsContainer.append(this.tabPanelWrapper);
+    }
   }
 
   /**
@@ -59,11 +72,20 @@ export class TabManager {
       panel: tabPanel,
     };
 
+    const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi");
+    if (isGandi) {
+      tabPanel.classList.add(this.addon.tab.scratchClass("editor-wrapper_ghost"));
+    }
+
     this.tabs.push(tab);
 
     // Append directly to the DOM
     this.tabsHeader.append(tabHeader);
-    this.tabsContainer.append(tabPanel);
+    if (this.tabPanelWrapper) {
+      this.tabPanelWrapper.append(tabPanel);
+    } else {
+      this.tabsContainer.append(tabPanel);
+    }
 
     // Add click event handler
     const tabIndex = this.tabs.length - 1;
@@ -93,6 +115,8 @@ export class TabManager {
       return;
     }
 
+    const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi");
+
     // Hide the current tab
     const currentTab = this.tabs[this.currentTabIndex];
     currentTab.header.classList.remove(
@@ -103,6 +127,9 @@ export class TabManager {
       this.addon.tab.scratchClass("react-tabs_react-tabs__tab-panel--selected"),
       this.addon.tab.scratchClass("gui_is-selected")
     );
+    if (isGandi) {
+      currentTab.panel.classList.add(this.addon.tab.scratchClass("editor-wrapper_ghost"));
+    }
 
     // Show the new tab
     const newTab = this.tabs[tabIndex];
@@ -114,6 +141,9 @@ export class TabManager {
       this.addon.tab.scratchClass("react-tabs_react-tabs__tab-panel--selected"),
       this.addon.tab.scratchClass("gui_is-selected")
     );
+    if (isGandi) {
+      newTab.panel.classList.remove(this.addon.tab.scratchClass("editor-wrapper_ghost"));
+    }
 
     this.currentTabIndex = tabIndex;
   }

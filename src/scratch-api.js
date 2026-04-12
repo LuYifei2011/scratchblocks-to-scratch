@@ -1,24 +1,31 @@
 import * as modal from "./modal.js";
 
-const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi/project/");
+const isTurboWarp = window.location.host === "turbowarp.org" || !!window.__SB2S_DESKTOP_TURBOWARP__;
+const isCCW = window.location.href.startsWith("https://www.ccw.site");
+const isGandi = window.location.href.startsWith("https://www.ccw.site/gandi");
+
+// ---- 默认设置（硬编码） ----
+const DEFAULT_SETTINGS = {
+  autoPaste: true,
+};
+
+// ---- Redux State ----
 
 function getReduxState() {
-  // 找到任意 React 挂载的节点
+  if (isTurboWarp) return window.ReduxStore.getState();
+
   const root =
     document.querySelector('[class*="gui_"]') || document.querySelector("#app") || document.body.firstElementChild;
 
-  // 找 React Fiber key
   const fiberKey = Object.keys(root).find(
     (k) => k.startsWith("__reactFiber$") || k.startsWith("__reactInternalInstance$")
   );
   if (!fiberKey) return null;
 
   let fiber = root[fiberKey];
-  // 向上遍历找到有 stateNode.store 的节点（Redux Provider）
   while (fiber) {
     const state = fiber?.memoizedState?.element?.props?.store?.getState?.();
     if (state?.scratchGui?.vm) return state;
-    // 或者直接在 stateNode 上找
     if (fiber.stateNode?.store) {
       const s = fiber.stateNode.store.getState();
       if (s?.scratchGui?.vm) return s;
@@ -28,14 +35,14 @@ function getReduxState() {
   return null;
 }
 
-async function getBlockly() {
-  // ---- 依赖：获取 React 内部 Fiber key ----
+// ---- Blockly（从 React Fiber 中获取） ----
+
+async function getBlocklyFromFiber() {
   function getInternalKey(elem) {
     const REACT_INTERNAL_PREFIXES = ["__reactFiber$", "__reactInternalInstance$"];
     return Object.keys(elem).find((key) => REACT_INTERNAL_PREFIXES.some((prefix) => key.startsWith(prefix)));
   }
 
-  // ---- 依赖：从 wrapper 元素中找到持有 ScratchBlocks 的组件 ----
   function getBlocksComponent(wrapper) {
     const internal = wrapper[getInternalKey(wrapper)];
     let childable = internal;
@@ -43,7 +50,6 @@ async function getBlockly() {
     return childable;
   }
 
-  // ---- 依赖：等待目标元素出现（轮询实现） ----
   function waitForElement(selector, timeout = 10000) {
     return new Promise((resolve, reject) => {
       const existing = document.querySelector(selector);
@@ -63,7 +69,6 @@ async function getBlockly() {
     });
   }
 
-  // ---- 主逻辑：getBlockly ----
   const BLOCKS_CLASS = '[class*="gui_blocks-wrapper_"]';
   let elem = document.querySelector(BLOCKS_CLASS);
   if (!elem) {
@@ -71,31 +76,23 @@ async function getBlockly() {
   }
 
   const childable = getBlocksComponent(elem);
-  const Blockly = childable.stateNode.ScratchBlocks;
-
-  return Blockly;
+  return childable.stateNode.ScratchBlocks;
 }
 
 // ---- scratchClass ----
 
 function convertScratchToGandiClassName(className) {
-  // 这个映射表的类名不是完全对应的，而是实际情况编写的
-  // 无相应类名的，返回 "null"，以免发生错误
   const GANDI_CLASS_NAME_MAP = {
-    // 菜单栏按钮
-    "menu-bar_menu-bar-item": "gandi_project-title-input_title-field",
-    "menu-bar_no-offset": "gandi_project-title-input_title-text",
-    // 标签页
     gui_tabs: "gandi_editor-wrapper_tabList",
     "react-tabs_react-tabs__tab-list": "null",
-    "gui_tab-list": "null",
+    "gui_tab-list": "gandi_editor-wrapper_tabList",
     gui_tab: "null",
     "react-tabs_react-tabs__tab-panel": "null",
-    "gui_tab-panel": "null",
+    "gui_tab-panel": "gandi_editor-wrapper_tabPanel",
     "gui_is-selected": "null",
-    "react-tabs_react-tabs__tab": "react-tabs_react-gandi_editor-wrapper_tab",
+    "react-tabs_react-tabs__tab": "gandi_editor-wrapper_tab",
     "react-tabs_react-tabs__tab--selected": "gandi_editor-wrapper_selected",
-    // 对话框
+    "react-tabs_react-tabs__tab-panel--selected": "null",
     "modal_modal-overlay": "gandi_modal_modal-overlay",
   };
   if (isGandi) {
@@ -142,9 +139,9 @@ function loadScratchClassNames() {
     ),
   ];
   if (isGandi) {
-    return arr.reverse(); // 反转数组，使得后面定义的类名优先匹配
+    return arr.reverse();
   } else {
-    return arr; // 不反转，保持原有顺序
+    return arr;
   }
 }
 
@@ -162,7 +159,7 @@ function scratchClass(...args) {
     .filter((arg) => typeof arg === "string")
     .forEach((classNameToFind) => {
       classNameToFind = convertScratchToGandiClassName(classNameToFind);
-      if (classNameToFind === "null") return "null";
+      if (classNameToFind === "null") res += "null";
       res +=
         classNamesArr.find(
           (className) => className.startsWith(classNameToFind + "_") && className.length === classNameToFind.length + 6
@@ -170,7 +167,6 @@ function scratchClass(...args) {
       res += " ";
     });
 
-  // 处理末尾的 options 对象 { others: ... }
   if (args.length > 0 && typeof args[args.length - 1] === "object") {
     const options = args[args.length - 1];
     const others = Array.isArray(options.others) ? options.others : [options.others];
@@ -178,57 +174,208 @@ function scratchClass(...args) {
   }
 
   res = res.slice(0, -1);
-  res = res.replace(/"/g, ""); // 安全过滤
+  res = res.replace(/"/g, "");
   return res;
 }
 
-export async function getAddonApi() {
-  let reduxState, vm, workspace, api;
-  // __SB2S_DESKTOP_TURBOWARP__ 由桌面版修补程序注入
-  if (window.location.host === "turbowarp.org" || window.__SB2S_DESKTOP_TURBOWARP__) {
-    api = {
-      Blockly: window.ScratchBlocks,
-      reduxState: window.ReduxStore.getState(),
-      vm: window.vm,
-      workspace: window.ScratchBlocks.getMainWorkspace(),
+// ---- createBlockContextMenu（从 SA Tab.js 移植，去除 addonId 依赖） ----
+
+const contextMenuCallbacks = [];
+let createdAnyBlockContextMenus = false;
+
+function setupBlockContextMenu(ScratchBlocks) {
+  if (ScratchBlocks.registry) {
+    // new Blockly
+    const oldGenerateContextMenu = ScratchBlocks.BlockSvg.prototype.generateContextMenu;
+    ScratchBlocks.BlockSvg.prototype.generateContextMenu = function (...args) {
+      let items = oldGenerateContextMenu.call(this, ...args);
+      for (const { callback, blocks, flyout } of contextMenuCallbacks) {
+        const injectMenu = (blocks && !this.isInFlyout) || (flyout && this.isInFlyout);
+        if (injectMenu) {
+          try {
+            items = callback(items, this);
+          } catch (e) {
+            console.error("Error while calling context menu callback: ", e);
+          }
+        }
+      }
+      return items;
     };
+    return;
+  }
+
+  // old Blockly (Scratch / Gandi / CCW 等)
+  const oldShow = ScratchBlocks.ContextMenu.show;
+  ScratchBlocks.ContextMenu.show = function (event, items, rtl) {
+    const gesture = ScratchBlocks.mainWorkspace.currentGesture_;
+    const block = gesture.targetBlock_;
+
+    for (const { callback, workspace, blocks, flyout, comments } of contextMenuCallbacks) {
+      const injectMenu =
+        (workspace && !block && !gesture.flyout_ && !gesture.startBubble_) ||
+        (blocks && block && !gesture.flyout_) ||
+        (flyout && gesture.flyout_) ||
+        (comments && gesture.startBubble_);
+      if (injectMenu) {
+        try {
+          items = callback(items, block);
+        } catch (e) {
+          console.error("Error while calling context menu callback: ", e);
+        }
+      }
+    }
+
+    if (!isTurboWarp && !isCCW) {
+      // 原版 Scratch（可能安装了 SA）：将 separator 属性展开为单独的分隔项，
+      // 兼容 SA 的 createWidget_ 覆写方式（分隔线作为独立项，padding: 0）
+      const expandedItems = [];
+      for (const item of items) {
+        if (item.separator && item.text) {
+          expandedItems.push({ separator: true, enabled: false, text: "" });
+          const { separator: _, ...rest } = item;
+          expandedItems.push(rest);
+        } else {
+          expandedItems.push(item);
+        }
+      }
+      items = expandedItems;
+
+      const oldCreateWidget = ScratchBlocks.ContextMenu.createWidget_;
+      ScratchBlocks.ContextMenu.createWidget_ = function (...args) {
+        oldCreateWidget.call(this, ...args);
+        const blocklyContextMenu = ScratchBlocks.WidgetDiv.DIV.firstChild;
+        items.forEach((item, i) => {
+          if (item.separator) {
+            const itemElt = blocklyContextMenu.children[i];
+            itemElt.setAttribute("role", "separator");
+            itemElt.style.padding = "0";
+            if (i !== 0) {
+              itemElt.style.borderTop = "1px solid hsla(0, 0%, 0%, 0.15)";
+            }
+          }
+        });
+      };
+
+      oldShow.call(this, event, items, rtl);
+
+      ScratchBlocks.ContextMenu.createWidget_ = oldCreateWidget;
+    } else {
+      // TW/CCW（含 Gandi）：渲染后给带有 separator 属性的菜单项添加分隔线样式
+      // （与 TW addons 的 createBlockContextMenu 行为一致）
+      oldShow.call(this, event, items, rtl);
+
+      const blocklyContextMenu = ScratchBlocks.WidgetDiv.DIV.firstChild;
+      items.forEach((item, i) => {
+        if (i !== 0 && item.separator) {
+          const itemElt = blocklyContextMenu.children[i];
+          itemElt.style.paddingTop = "2px";
+          itemElt.classList.add("sa-blockly-menu-item-border");
+          itemElt.style.borderTop = "1px solid var(--ui-black-transparent, hsla(0, 0%, 0%, 0.15))";
+        }
+      });
+    }
+  };
+}
+
+// ---- 主入口：构建 SA 兼容 API ----
+
+export async function getAddonApi() {
+  // 1. 获取核心对象：Blockly, reduxState, vm, workspace
+  let BlocklyInstance, reduxState, vm, workspace;
+
+  if (isTurboWarp) {
+    BlocklyInstance = window.ScratchBlocks;
+    reduxState = window.ReduxStore.getState();
+    vm = window.vm;
+    workspace = BlocklyInstance.getMainWorkspace();
   } else {
     reduxState = getReduxState();
     vm = reduxState?.scratchGui?.vm;
     workspace = window.Blockly.getMainWorkspace();
-    api = { reduxState, vm, workspace };
     if (isGandi) {
-      api.Blockly = workspace.getScratchBlocks();
+      BlocklyInstance = workspace.getScratchBlocks();
     } else {
-      api.Blockly = await getBlockly();
+      BlocklyInstance = await getBlocklyFromFiber();
     }
   }
 
-  const tab = {
-    scratchClass,
-    Blockly: api.Blockly,
-    scratchMessage: (m) =>
-      api.Blockly?.ScratchMsgs?.locales?.[api.Blockly?.ScratchMsgs?.currentLocale_]?.[m] ||
-      api.reduxState?.locales?.messages?.[m] ||
-      m,
+  // 2. 构建 tab.traps（兼容 SA Trap 类接口）
+  const traps = {
+    getBlockly: () => Promise.resolve(BlocklyInstance),
+    getWorkspace: () => workspace,
+    get vm() {
+      return vm;
+    },
   };
 
-  function prompt(title, message, defaultValue, opts) {
-    return modal.prompt(tab, title, message, defaultValue, opts);
-  }
+  // 3. 构建 tab.redux（兼容 SA ReduxHandler 接口）
+  const redux = {
+    get state() {
+      // TurboWarp 的 ReduxStore 每次 getState() 获取最新状态
+      if (isTurboWarp) return window.ReduxStore.getState();
+      return getReduxState();
+    },
+  };
 
-  function confirm(title, message, opts) {
-    return modal.confirm(tab, title, message, opts);
-  }
+  // 4. 构建 tab 对象（兼容 SA Tab 类接口）
+  const tab = {
+    // ---- 从 SA Tab 移植的属性 ----
+    Blockly: BlocklyInstance,
+    editorMode: "editor",
+    clientVersion: "scratch-www",
 
-  function createModal(title, { isOpen = false } = {}) {
-    return modal.createEditorModal(tab, title, { isOpen });
-  }
+    get direction() {
+      const rtlLocales = ["ar", "ckb", "fa", "he"];
+      const locale = redux.state?.locales?.locale || "en";
+      const lang = locale.split("-")[0];
+      return rtlLocales.includes(lang) ? "rtl" : "ltr";
+    },
 
-  tab.prompt = prompt;
-  tab.confirm = confirm;
-  tab.createModal = createModal;
+    // ---- 从 SA Tab 移植的方法 ----
+    traps,
+    redux,
+    scratchClass,
 
-  api.tab = tab;
-  return api;
+    scratchMessage(m) {
+      return (
+        BlocklyInstance?.ScratchMsgs?.locales?.[BlocklyInstance?.ScratchMsgs?.currentLocale_]?.[m] ||
+        reduxState?.locales?.messages?.[m] ||
+        m
+      );
+    },
+
+    createModal(title, { isOpen = false } = {}) {
+      return modal.createEditorModal(tab, title, { isOpen });
+    },
+
+    prompt(title, message, defaultValue, opts) {
+      return modal.prompt(tab, title, message, defaultValue, opts);
+    },
+
+    confirm(title, message, opts) {
+      return modal.confirm(tab, title, message, opts);
+    },
+
+    createBlockContextMenu(callback, { workspace = false, blocks = false, flyout = false, comments = false } = {}) {
+      contextMenuCallbacks.push({ callback, workspace, blocks, flyout, comments });
+
+      if (createdAnyBlockContextMenus) return;
+      createdAnyBlockContextMenus = true;
+
+      setupBlockContextMenu(BlocklyInstance);
+    },
+  };
+
+  // 5. 构建完整的 SA 兼容 addon 对象
+  return {
+    tab,
+    settings: {
+      get(key) {
+        return DEFAULT_SETTINGS[key];
+      },
+    },
+    self: {
+      disabled: false,
+    },
+  };
 }

@@ -48,25 +48,25 @@ const style = `
 .sa-text2blocks-table td {
   padding: 10px;
   text-align: left;
-  border-bottom: 1px solid var(--editorDarkMode-border, #ffffff0d);
+  border-bottom: 1px solid var(--editorDarkMode-border, rgba(0, 0, 0, 0.15));
 }
 
 .sa-text2blocks-table th {
-  background-color: var(--editorDarkMode-accent, #151515);
+  background-color: var(--editorDarkMode-accent, white);
   font-weight: 600;
   font-size: 12px;
-  color: var(--editorDarkMode-page-text, #ffffff);
+  color: var(--editorDarkMode-page-text, #575e75);
 }
 
 .sa-text2blocks-table tr:hover {
-  background-color: var(--editorDarkMode-input, #202020);
+  background-color: var(--editorDarkMode-input, white);
 }
 
 .sa-text2blocks-table-name-col {
   width: 25%;
   font-weight: 500;
   word-break: break-word;
-  color: var(--editorDarkMode-page-text, #ffffff);
+  color: var(--editorDarkMode-page-text, #575e75);
 }
 
 .sa-text2blocks-table-name-col span {
@@ -84,10 +84,10 @@ const style = `
 /* Selects and inputs */
 .sa-text2blocks-select {
   padding: 6px 8px;
-  border: 1px solid var(--editorDarkMode-border, #fc7c24);
+  border: 1px solid var(--editorDarkMode-border, rgba(0, 0, 0, 0.15));
   border-radius: 4px;
-  background-color: var(--editorDarkMode-input, #202020);
-  color: var(--editorDarkMode-input-text, #ffffff);
+  background-color: var(--editorDarkMode-input, white);
+  color: var(--editorDarkMode-input-text, #575e75);
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
@@ -109,10 +109,10 @@ const style = `
 
 .sa-text2blocks-input {
   padding: 6px 8px;
-  border: 1px solid var(--editorDarkMode-border, #fc7c24);
+  border: 1px solid var(--editorDarkMode-border, rgba(0, 0, 0, 0.15));
   border-radius: 4px;
-  background-color: var(--editorDarkMode-input, #202020);
-  color: var(--editorDarkMode-input-text, #ffffff);
+  background-color: var(--editorDarkMode-input, white);
+  color: var(--editorDarkMode-input-text, #575e75);
   font-size: 12px;
   font-family: inherit;
   min-width: 80px;
@@ -122,7 +122,7 @@ const style = `
 }
 
 .sa-text2blocks-input::placeholder {
-  color: var(--editorDarkMode-input-transparentText, rgba(255, 255, 255, 0.4));
+  color: var(--editorDarkMode-input-transparentText, hsla(225, 15%, 40%, 0.6));
 }
 
 .sa-text2blocks-input:hover {

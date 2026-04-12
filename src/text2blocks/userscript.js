@@ -2,31 +2,24 @@ import { Text2Blocks } from "./scratchblocks/text2blocks.js";
 import { getLocale } from "./scratchblocks/build-locales.js";
 import { loadLanguages } from "./scratchblocks/blocks.js";
 import { TabManager } from "./tab-manager.js";
-import "./style.js";
 
 export default async function ({ addon, console, msg }) {
-  const Blockly = addon.Blockly;
-  const workspace = addon.workspace;
-  const vm = addon.vm;
-  const reduxState = addon.reduxState;
-  const userLang = reduxState.locales.locale;
+  const Blockly = await addon.tab.traps.getBlockly();
+  const workspace = addon.tab.traps.getWorkspace();
+  const vm = addon.tab.traps.vm;
+  const redux = addon.tab.redux;
+  const userLang = redux.state.locales.locale;
+
+  // Record right-click position for block placement
+  let menuMouseX = 0;
+  let menuMouseY = 0;
 
   loadLanguages({
-    en: getLocale("en", reduxState, Blockly),
-    ...(userLang !== "en" ? { [userLang]: getLocale(userLang, reduxState, Blockly) } : {}),
+    en: getLocale("en", redux.state, Blockly),
+    ...(userLang !== "en" ? { [userLang]: getLocale(userLang, redux.state, Blockly) } : {}),
   });
 
-  const editorMenu = document.querySelector("[class*=menu-bar_main-menu_]");
-  const devider = document.createElement("div");
-  devider.className = addon.tab.scratchClass("divider_divider", "menu-bar_divider");
-  editorMenu.appendChild(devider);
-
-  const menuItem = document.createElement("div");
-  menuItem.className = addon.tab.scratchClass("menu-bar_menu-bar-item", "menu-bar_no-offset", "menu-bar_hoverable");
-  menuItem.textContent = msg("main");
-  editorMenu.appendChild(menuItem);
-
-  menuItem.addEventListener("click", async () => {
+  async function openText2BlocksModal() {
     const modal = addon.tab.createModal(msg("main"), {
       isOpen: true,
       useEditorClasses: true,
@@ -65,6 +58,18 @@ export default async function ({ addon, console, msg }) {
 
     // Switch to code tab
     tabManager.switchTab("code-tab");
+
+    // Auto-paste clipboard content if setting is enabled
+    if (addon.settings.get("autoPaste")) {
+      try {
+        const clipboardText = await navigator.clipboard.readText();
+        if (clipboardText) {
+          textarea.value = clipboardText;
+        }
+      } catch (e) {
+        // Clipboard access denied or unavailable, ignore
+      }
+    }
 
     // Used to record variable mapping selections
     const variableMappings = new Map(); // key: variableName, value: { type: 'new' | 'existing', data: {...} }
@@ -106,7 +111,7 @@ export default async function ({ addon, console, msg }) {
       if (text2blocks.variableNames.size === 0 && text2blocks.listNames.size === 0) {
         const emptyMsg = document.createElement("p");
         emptyMsg.textContent = msg("no-variables-lists");
-        emptyMsg.style.color = "var(--editorDarkMode-input-transparentText, rgba(255, 255, 255, 0.4))";
+        emptyMsg.style.color = "var(--editorDarkMode-input-transparentText, hsla(225, 15%, 40%, 0.6))";
         variablesPanel.appendChild(emptyMsg);
         return;
       }
@@ -116,7 +121,7 @@ export default async function ({ addon, console, msg }) {
         const varTitle = document.createElement("h3");
         varTitle.textContent = msg("variables");
         varTitle.style.marginBottom = "10px";
-        varTitle.style.color = "var(--editorDarkMode-page-text, #ffffff)";
+        varTitle.style.color = "var(--editorDarkMode-page-text, #575e75)";
         variablesPanel.appendChild(varTitle);
 
         const varTable = createVariablesTable(Array.from(text2blocks.variableNames), "variable");
@@ -129,7 +134,7 @@ export default async function ({ addon, console, msg }) {
         listTitle.textContent = msg("lists");
         listTitle.style.marginBottom = "10px";
         listTitle.style.marginTop = "20px";
-        listTitle.style.color = "var(--editorDarkMode-page-text, #ffffff)";
+        listTitle.style.color = "var(--editorDarkMode-page-text, #575e75)";
         variablesPanel.appendChild(listTitle);
 
         const listTable = createVariablesTable(Array.from(text2blocks.listNames), "list");
@@ -148,7 +153,7 @@ export default async function ({ addon, console, msg }) {
       if (!hasErrors && !hasWarnings) {
         const emptyMsg = document.createElement("p");
         emptyMsg.textContent = msg("no-issues");
-        emptyMsg.style.color = "var(--editorDarkMode-input-transparentText, rgba(255, 255, 255, 0.4))";
+        emptyMsg.style.color = "var(--editorDarkMode-input-transparentText, hsla(225, 15%, 40%, 0.6))";
         issuesPanel.appendChild(emptyMsg);
         return;
       }
@@ -215,7 +220,7 @@ export default async function ({ addon, console, msg }) {
         issuesPanel.appendChild(errorTitle);
 
         const errorList = document.createElement("ul");
-        errorList.style.color = "var(--editorDarkMode-page-text, #ffffff)";
+        errorList.style.color = "var(--editorDarkMode-page-text, #575e75)";
         errorList.style.marginBottom = "20px";
         for (const error of text2blocks.errors) {
           const li = document.createElement("li");
@@ -235,7 +240,7 @@ export default async function ({ addon, console, msg }) {
         issuesPanel.appendChild(warningTitle);
 
         const warningList = document.createElement("ul");
-        warningList.style.color = "var(--editorDarkMode-page-text, #ffffff)";
+        warningList.style.color = "var(--editorDarkMode-page-text, #575e75)";
         for (const warning of text2blocks.warnings) {
           const li = document.createElement("li");
           li.textContent = formatErrorMessage(warning);
@@ -462,7 +467,7 @@ export default async function ({ addon, console, msg }) {
     parseButton.addEventListener("click", async () => {
       try {
         const text = textarea.value;
-        text2blocks.text2blocks(text, userLang !== "en" ? [userLang, "en"] : ["en"]);
+        text2blocks.text2blocks(text, userLang !== "en" ? ["en", userLang] : ["en"]);
         console.log("Converted blocks JSON:", text2blocks.blockJson);
         console.log("Variable names:", text2blocks.variableNames);
         console.log("List names:", text2blocks.listNames);
@@ -582,10 +587,22 @@ export default async function ({ addon, console, msg }) {
         // Apply variable mappings, replace variable references in blocks
         text2blocks.applyVariableMappings(finalVariableMappings);
 
+        // Place top-level blocks at the recorded right-click position with offsets
+        const VERTICAL_OFFSET = 50;
+        const HORIZONTAL_OFFSET = 80;
+        let offsetIndex = 0;
+        for (const block of text2blocks.blockJson) {
+          if (block.topLevel) {
+            block.x = menuMouseX + HORIZONTAL_OFFSET * offsetIndex;
+            block.y = menuMouseY + VERTICAL_OFFSET * offsetIndex;
+            offsetIndex++;
+          }
+        }
+
         await vm.shareBlocksToTarget(text2blocks.blockJson, target.id);
         vm.emitWorkspaceUpdate();
         vm.emitTargetsUpdate();
-        workspace.updateToolbox(reduxState.scratchGui.toolbox.toolboxXML);
+        workspace.updateToolbox(redux.state.scratchGui.toolbox.toolboxXML);
         workspace.toolboxRefreshEnabled_ = true;
         remove();
       } catch (error) {
@@ -593,7 +610,52 @@ export default async function ({ addon, console, msg }) {
         alert("Apply failed: " + error.message);
       }
     });
-  });
+  }
+
+  addon.tab.createBlockContextMenu(
+    (items) => {
+      if (addon.self.disabled) return items;
+
+      // Capture right-click workspace coordinates from the current gesture
+      const gesture = workspace.currentGesture_;
+      if (gesture) {
+        const event = Blockly.registry ? gesture.mostRecentEvent : gesture.mostRecentEvent_;
+        if (event) {
+          const svgPoint = Blockly.utils.mouseToSvg
+            ? Blockly.utils.mouseToSvg(event, workspace.getParentSvg(), workspace.getInverseScreenCTM())
+            : Blockly.browserEvents.mouseToSvg(event, workspace.getParentSvg(), workspace.getInverseScreenCTM());
+          const wsPoint = Blockly.utils.svgMath
+            ? Blockly.utils.svgMath.screenToWsCoordinates(workspace, svgPoint)
+            : svgPoint;
+          // For old Blockly, manually convert from SVG to workspace coordinates
+          if (!Blockly.utils.svgMath) {
+            const scale = workspace.scale;
+            const origin = workspace.getOriginOffsetInPixels();
+            menuMouseX = (svgPoint.x - origin.x) / scale;
+            menuMouseY = (svgPoint.y - origin.y) / scale;
+          } else {
+            menuMouseX = wsPoint.x;
+            menuMouseY = wsPoint.y;
+          }
+        }
+      }
+
+      const pasteItemIndex = items.findIndex((obj) => obj._isDevtoolsFirstItem);
+      const insertBeforeIndex = pasteItemIndex !== -1 ? pasteItemIndex : items.length;
+
+      items.splice(insertBeforeIndex, 0, {
+        enabled: true,
+        text: msg("main"),
+        callback: () => {
+          openText2BlocksModal();
+        },
+        separator: true,
+      });
+
+      return items;
+    },
+    { workspace: true }
+  );
 
   function getVariablesOfTarget(target, type = "variable") {
     type = type === "list" ? "list" : "";

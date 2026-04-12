@@ -11,7 +11,7 @@
 - [Scratch 3.0 Windows 版](https://scratch.mit.edu/download)
 - [TurboWarp 在线版](https://turbowarp.org/)
 - [TurboWarp Windows 版](https://turbowarp.org/desktop)
-- [共创世界 Gandi IDE](http://ccw.site/gandi/) (目前有些问题，无法正常使用，后续会修复)
+- [共创世界 Gandi IDE](http://ccw.site/gandi/)
 - [共创世界 传统编辑器](https://www.ccw.site/creator/)
 - 理论上也支持其他基于 Scratch 3.0 的编辑器 (可以自行修改脚本里的 `match` 以适配)
 
