@@ -1,48 +1,50 @@
-# 将 [scratchblocks](https://scratchblocks.github.io/) 代码转换为 [Scratch](https://scratch.mit.edu/) 积木块
+# Convert [scratchblocks](https://scratchblocks.github.io/) Code to [Scratch](https://scratch.mit.edu/) Blocks
+
+English | [中文](./README_ZH.md)
 
 > [!IMPORTANT]
-> 此项目目前处于早期开发阶段，可能存在一些问题。
-> 
-> 请备份您的 Scratch 项目，以防止数据丢失。
+> This project is currently in early development and may have some issues.
+>
+> Please back up your Scratch projects to prevent data loss.
 
-## 适配的编辑器
+## Supported Editors
 
-- [Scratch 3.0 在线版](https://scratch.mit.edu/)
-- [Scratch 3.0 Windows 版](https://scratch.mit.edu/download)
-- [TurboWarp 在线版](https://turbowarp.org/)
-- [TurboWarp Windows 版](https://turbowarp.org/desktop)
-- [共创世界 Gandi IDE](http://ccw.site/gandi/)
-- [共创世界 传统编辑器](https://www.ccw.site/creator/)
-- 理论上也支持其他基于 Scratch 3.0 的编辑器 (可以自行修改脚本里的 `match` 以适配)
+- [Scratch 3.0 Online](https://scratch.mit.edu/)
+- [Scratch 3.0 Windows App](https://scratch.mit.edu/download)
+- [TurboWarp Online](https://turbowarp.org/)
+- [TurboWarp Windows App](https://turbowarp.org/desktop)
+- [Gandi IDE (Co-Creation World)](http://ccw.site/gandi/)
+- [Co-Creation World Classic Editor](https://www.ccw.site/creator/)
+- Theoretically supports other Scratch 3.0-based editors (you can modify the `match` in the script to adapt)
 
-## 安装
+## Installation
 
-### 浏览器
+### Browser
 
-使用 [篡改猴(Tampermonkey)](https://www.tampermonkey.net/) 或 [脚本猫](https://scriptcat.org/) 等用户脚本管理器安装 [此脚本](https://luyifei2011.github.io/scratchblocks-to-scratch/scratchblocks-to-scratch.user.js)。
+Install [this userscript](https://luyifei2011.github.io/scratchblocks-to-scratch/scratchblocks-to-scratch.user.js) using a userscript manager such as [Tampermonkey](https://www.tampermonkey.net/) or [ScriptCat](https://scriptcat.org/).
 
-### 桌面应用
+### Desktop Application
 
-在 [Releases](https://github.com/LuYifei2011/scratch_desktop_patch_tool/releases) 页面下载最新版本的安装包并安装。
+Download the latest installer from the [Releases](https://github.com/LuYifei2011/scratch_desktop_patch_tool/releases) page and install it.
 
 ### ScratchAddons
 
-我提了一个 [PR #8860](https://github.com/ScratchAddons/ScratchAddons/pull/8860)，目前还未合并。如果将来合并了，您也可以通过安装 ScratchAddons 来使用这个功能。
+I have submitted a [PR #8860](https://github.com/ScratchAddons/ScratchAddons/pull/8860), which has not been merged yet. Once merged, you will also be able to use this feature by installing ScratchAddons.
 
-## 使用方法
+## How to Use
 
-1. 右键点击代码区的空白区域，选择 "将文本转为积木"。
-2. 会自动从剪贴板粘贴，也可以在输入框中手动粘贴 scratchblocks 代码。
-3. 点击“解析”。
-4. 点击“应用”。
+1. Right-click on an empty area in the code workspace and select **"Convert Text to Blocks"**.
+2. The script will automatically paste from the clipboard, or you can manually paste scratchblocks code into the input box.
+3. Click **"Parse"**.
+4. Click **"Apply"**.
 
 > [!NOTE]
-> 自动粘贴功能可能会因为权限问题而无法使用，如果无法自动粘贴，请手动粘贴代码。
+> The automatic paste feature may not work due to permission issues. If it fails, please paste the code manually.
 
-## 许可证
+## License
 
-本项目采用 [GPL-3.0 许可证](LICENSE) 开源。
+This project is open source under the [GPL-3.0 License](LICENSE).
 
-本项目使用了以下第三方库的代码：
-- [scratchblocks](https://scratchblocks.github.io/) (MIT 许可证)
-- [ScratchAddons](https://scratchaddons.com/) (GPL 许可证)
+This project uses code from the following third-party libraries:
+- [scratchblocks](https://scratchblocks.github.io/) (MIT License)
+- [ScratchAddons](https://scratchaddons.com/) (GPL License)
